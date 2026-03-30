@@ -79,12 +79,6 @@ export async function getCharacterPortrait(
 export async function searchCharacterByName(
   name: string
 ): Promise<CharacterSearchResult | null> {
-  const res = await fetch(`${ESI_BASE}/search/`, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-  })
-
-  // ESI search is GET with query params
   const params = new URLSearchParams({
     categories: 'character',
     search: name,
