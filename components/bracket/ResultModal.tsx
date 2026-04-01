@@ -4,15 +4,15 @@ import Image from "next/image"
 import { useState } from "react"
 import type { BracketWithEntrants, Entrant } from "@/lib/bracket"
 
-const GOLD = "#f0c040"
+const GOLD = "var(--ev-gold-light)"
 const ZKILL_RE = /^https?:\/\/(www\.)?zkillboard\.com\/kill\/\d+\/?$/
 
 function CapsuleerSilhouette() {
   return (
     <svg width={56} height={56} viewBox="0 0 56 56" fill="none">
-      <circle cx="28" cy="28" r="28" fill="#1a1a2e" />
-      <circle cx="28" cy="21" r="10" fill="#2a2a3e" />
-      <ellipse cx="28" cy="45" rx="14" ry="11" fill="#2a2a3e" />
+      <circle cx="28" cy="28" r="28" fill="var(--ev-steel)" />
+      <circle cx="28" cy="21" r="10" fill="var(--ev-card2)" />
+      <ellipse cx="28" cy="45" rx="14" ry="11" fill="var(--ev-card2)" />
     </svg>
   )
 }
@@ -34,7 +34,7 @@ function FighterCard({
       gap: 8, padding: "16px 12px",
       background: selected ? "rgba(240,192,64,0.08)" : "rgba(255,255,255,0.02)",
       border: `2px solid ${selected ? GOLD : "rgba(255,255,255,0.1)"}`,
-      borderRadius: 6, cursor: "pointer",
+      borderRadius: 10, cursor: "pointer",
       opacity: dimmed ? 0.35 : 1,
       transition: "all 0.15s",
     }}>
@@ -44,7 +44,7 @@ function FighterCard({
             style={{ borderRadius: "50%", objectFit: "cover" }} />
         ) : <CapsuleerSilhouette />}
       </div>
-      <div style={{ color: selected ? GOLD : "#c8c8c8", fontWeight: selected ? 600 : 400, fontSize: 13, textAlign: "center" }}>
+      <div style={{ color: selected ? GOLD : "var(--ev-text)", fontWeight: selected ? 600 : 400, fontSize: 13, textAlign: "center" }}>
         {entrant.character_name}
       </div>
     </button>
@@ -107,9 +107,9 @@ export default function ResultModal({ match, onClose, onConfirm }: ResultModalPr
       }}
     >
       <div style={{
-        background: "#0d0d1a",
-        border: "1px solid rgba(240,192,64,0.22)",
-        borderRadius: 8, padding: 24,
+        background: "var(--ev-card)",
+        border: "1px solid var(--ev-border2)",
+        borderRadius: 10, padding: 24,
         width: "100%", maxWidth: 440, margin: "0 16px",
       }}>
         <h2 style={{ color: GOLD, fontSize: 14, fontFamily: "monospace", marginBottom: 20, letterSpacing: 2 }}>
@@ -128,7 +128,7 @@ export default function ResultModal({ match, onClose, onConfirm }: ResultModalPr
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "block", color: "#666", fontSize: 10, fontFamily: "monospace", marginBottom: 6, letterSpacing: 1 }}>
+          <label style={{ display: "block", color: "var(--ev-muted)", fontSize: 10, fontFamily: "monospace", marginBottom: 6, letterSpacing: 1 }}>
             ZKILLBOARD URL (OPTIONAL)
           </label>
           <input
@@ -138,9 +138,9 @@ export default function ResultModal({ match, onClose, onConfirm }: ResultModalPr
             placeholder="https://zkillboard.com/kill/..."
             style={{
               width: "100%", padding: "8px 10px",
-              background: "#080810",
+              background: "var(--ev-card2)",
               border: `1px solid ${urlError ? "#c0392b" : "rgba(255,255,255,0.12)"}`,
-              borderRadius: 4, color: "#c8c8c8", fontSize: 12,
+              borderRadius: 4, color: "var(--ev-text)", fontSize: 12,
               fontFamily: "monospace", outline: "none", boxSizing: "border-box",
             }}
           />
@@ -164,7 +164,7 @@ export default function ResultModal({ match, onClose, onConfirm }: ResultModalPr
           <button onClick={onClose} style={{
             padding: "7px 16px", background: "transparent",
             border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4,
-            color: "#666", fontSize: 12, cursor: "pointer", fontFamily: "monospace",
+            color: "var(--ev-muted)", fontSize: 12, cursor: "pointer", fontFamily: "monospace",
           }}>Cancel</button>
           <button
             onClick={handleConfirm}
@@ -173,7 +173,7 @@ export default function ResultModal({ match, onClose, onConfirm }: ResultModalPr
               padding: "7px 16px", minWidth: 130,
               background: winnerId && !loading ? GOLD : "rgba(240,192,64,0.15)",
               border: "none", borderRadius: 4,
-              color: winnerId && !loading ? "#0a0a0f" : "#555",
+              color: winnerId && !loading ? "var(--ev-bg)" : "var(--ev-muted)",
               fontSize: 12, fontWeight: 600,
               cursor: winnerId && !loading ? "pointer" : "not-allowed",
               fontFamily: "monospace", transition: "all 0.15s",

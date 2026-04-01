@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { createSupabaseClient } from "@/lib/supabase"
 import { formatISK } from "@/lib/utils"
 
-const GOLD = "#f0c040"
+const GOLD = "var(--ev-gold-light)"
 
 interface BettorRecord {
   character_id: number
@@ -46,7 +46,7 @@ function ColHeader({
       style={{
         padding: "8px 12px", textAlign: "right", cursor: "pointer",
         fontFamily: "monospace", fontSize: 10, letterSpacing: 1, fontWeight: 600,
-        color: active ? GOLD : "#555",
+        color: active ? GOLD : "var(--ev-muted)",
         borderBottom: `1px solid ${active ? "rgba(240,192,64,0.3)" : "rgba(255,255,255,0.06)"}`,
         whiteSpace: "nowrap", userSelect: "none",
       }}
@@ -143,7 +143,7 @@ export default function RecordBoard({ tournamentId, refreshKey }: RecordBoardPro
       style={{
         padding: "8px 12px", textAlign: "left", cursor: "pointer",
         fontFamily: "monospace", fontSize: 10, letterSpacing: 1, fontWeight: 600,
-        color: sortCol === "name" ? GOLD : "#555",
+        color: sortCol === "name" ? GOLD : "var(--ev-muted)",
         borderBottom: `1px solid ${sortCol === "name" ? "rgba(240,192,64,0.3)" : "rgba(255,255,255,0.06)"}`,
         userSelect: "none",
       }}
@@ -182,7 +182,7 @@ export default function RecordBoard({ tournamentId, refreshKey }: RecordBoardPro
                       style={{ borderRadius: "50%", objectFit: "cover" }} />
                   </div>
                 </td>
-                <td style={{ padding: "8px 12px", color: "#c8c8c8", fontSize: 13 }}>
+                <td style={{ padding: "8px 12px", color: "var(--ev-text)", fontSize: 13 }}>
                   {r.character_name}
                 </td>
                 <td style={{ padding: "8px 12px", textAlign: "right", fontFamily: "monospace", fontSize: 12, color: "#27ae60" }}>
@@ -194,7 +194,7 @@ export default function RecordBoard({ tournamentId, refreshKey }: RecordBoardPro
                 <td style={{ padding: "8px 12px", textAlign: "right" }}>
                   <WinPctCell value={winPct(r)} />
                 </td>
-                <td style={{ padding: "8px 12px", textAlign: "right", fontFamily: "monospace", fontSize: 12, color: "#888" }}>
+                <td style={{ padding: "8px 12px", textAlign: "right", fontFamily: "monospace", fontSize: 12, color: "var(--ev-muted)" }}>
                   {formatISK(r.total_isk_wagered)}
                 </td>
                 <td style={{ padding: "8px 12px", textAlign: "right", fontFamily: "monospace", fontSize: 12, color: "#27ae60" }}>

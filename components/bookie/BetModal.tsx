@@ -5,14 +5,14 @@ import { useState } from "react"
 import { formatISK } from "@/lib/utils"
 import type { BracketWithEntrants, Entrant } from "@/lib/bracket"
 
-const GOLD = "#f0c040"
+const GOLD = "var(--ev-gold-light)"
 
 function CapsuleerIcon({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-      <circle cx="32" cy="32" r="32" fill="#1a1a2e" />
-      <circle cx="32" cy="24" r="11" fill="#2a2a3e" />
-      <ellipse cx="32" cy="52" rx="16" ry="13" fill="#2a2a3e" />
+      <circle cx="32" cy="32" r="32" fill="var(--ev-steel)" />
+      <circle cx="32" cy="24" r="11" fill="var(--ev-card2)" />
+      <ellipse cx="32" cy="52" rx="16" ry="13" fill="var(--ev-card2)" />
     </svg>
   )
 }
@@ -30,10 +30,10 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{
               width: 20, height: 20, borderRadius: "50%",
-              background: s.n <= current ? GOLD : "#1a1a2e",
+              background: s.n <= current ? GOLD : "var(--ev-steel)",
               border: `1px solid ${s.n <= current ? GOLD : "#333"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 10, color: s.n <= current ? "#0a0a0f" : "#444", fontFamily: "monospace", fontWeight: 700,
+              fontSize: 10, color: s.n <= current ? "var(--ev-bg)" : "#444", fontFamily: "monospace", fontWeight: 700,
             }}>{s.n < current ? "✓" : s.n}</div>
             <span style={{ fontSize: 10, fontFamily: "monospace", color: s.n === current ? GOLD : "#444", letterSpacing: 1 }}>
               {s.label.toUpperCase()}
@@ -119,7 +119,7 @@ export default function BetModal({ match, tournamentId, onClose, onSuccess }: Be
         gap: 8, padding: "16px 10px",
         background: selected ? "rgba(240,192,64,0.07)" : "rgba(255,255,255,0.02)",
         border: `2px solid ${selected ? GOLD : "rgba(255,255,255,0.09)"}`,
-        borderRadius: 6, cursor: "pointer",
+        borderRadius: 10, cursor: "pointer",
         opacity: selectedEntrant && !selected ? 0.35 : 1,
         transition: "all 0.15s",
       }}>
@@ -130,11 +130,11 @@ export default function BetModal({ match, tournamentId, onClose, onSuccess }: Be
             : <CapsuleerIcon size={64} />
           }
         </div>
-        <div style={{ color: selected ? GOLD : "#c8c8c8", fontWeight: selected ? 600 : 400, fontSize: 13, textAlign: "center" }}>
+        <div style={{ color: selected ? GOLD : "var(--ev-text)", fontWeight: selected ? 600 : 400, fontSize: 13, textAlign: "center" }}>
           {entrant.character_name}
         </div>
         {entrant.corporation_name && (
-          <div style={{ color: "#555", fontSize: 11 }}>{entrant.corporation_name}</div>
+          <div style={{ color: "var(--ev-muted)", fontSize: 11 }}>{entrant.corporation_name}</div>
         )}
         {odds && (
           <div style={{ fontFamily: "monospace", fontSize: 11, color: "#777" }}>
@@ -154,8 +154,8 @@ export default function BetModal({ match, tournamentId, onClose, onSuccess }: Be
       }}
     >
       <div style={{
-        background: "#0d0d1a", border: "1px solid rgba(240,192,64,0.22)",
-        borderRadius: 8, padding: 24, width: "100%", maxWidth: 480, margin: "0 16px",
+        background: "var(--ev-card)", border: "1px solid var(--ev-border2)",
+        borderRadius: 10, padding: 24, width: "100%", maxWidth: 480, margin: "0 16px",
       }}>
         <StepIndicator current={step} />
 
@@ -179,13 +179,13 @@ export default function BetModal({ match, tournamentId, onClose, onSuccess }: Be
               <button onClick={onClose} style={{
                 padding: "7px 16px", background: "transparent",
                 border: "1px solid rgba(255,255,255,0.1)", borderRadius: 4,
-                color: "#666", fontSize: 12, cursor: "pointer", fontFamily: "monospace",
+                color: "var(--ev-muted)", fontSize: 12, cursor: "pointer", fontFamily: "monospace",
               }}>Cancel</button>
               <button onClick={() => setStep(2)} disabled={!selectedEntrant} style={{
                 padding: "7px 16px", minWidth: 100,
                 background: selectedEntrant ? GOLD : "rgba(240,192,64,0.15)",
                 border: "none", borderRadius: 4,
-                color: selectedEntrant ? "#0a0a0f" : "#555",
+                color: selectedEntrant ? "var(--ev-bg)" : "var(--ev-muted)",
                 fontSize: 12, fontWeight: 600,
                 cursor: selectedEntrant ? "pointer" : "not-allowed",
                 fontFamily: "monospace",
@@ -210,7 +210,7 @@ export default function BetModal({ match, tournamentId, onClose, onSuccess }: Be
                 autoFocus
                 style={{
                   width: "100%", padding: "10px 12px",
-                  background: "#080810", border: "1px solid rgba(255,255,255,0.12)",
+                  background: "var(--ev-card2)", border: "1px solid rgba(255,255,255,0.12)",
                   borderRadius: 4, color: GOLD, fontSize: 18, fontFamily: "monospace",
                   outline: "none", boxSizing: "border-box", textAlign: "right",
                 }}
@@ -239,9 +239,9 @@ export default function BetModal({ match, tournamentId, onClose, onSuccess }: Be
             {iskAmount > 0 && selectedOdds && (
               <div style={{
                 padding: "10px 12px", background: "rgba(240,192,64,0.04)",
-                border: "1px solid rgba(240,192,64,0.1)", borderRadius: 4, marginBottom: 16,
+                border: "1.5px solid var(--ev-gold)", borderRadius: 4, marginBottom: 16,
               }}>
-                <div style={{ fontSize: 11, color: "#888", fontFamily: "monospace" }}>
+                <div style={{ fontSize: 11, color: "var(--ev-muted)", fontFamily: "monospace" }}>
                   Potential payout:{" "}
                   <span style={{ color: GOLD }}>{formatISK(Math.round(payout))}</span>
                   {" "}at {selectedOdds.fractional}
@@ -253,13 +253,13 @@ export default function BetModal({ match, tournamentId, onClose, onSuccess }: Be
               <button onClick={() => setStep(1)} style={{
                 padding: "7px 16px", background: "transparent",
                 border: "1px solid rgba(255,255,255,0.1)", borderRadius: 4,
-                color: "#666", fontSize: 12, cursor: "pointer", fontFamily: "monospace",
+                color: "var(--ev-muted)", fontSize: 12, cursor: "pointer", fontFamily: "monospace",
               }}>← Back</button>
               <button onClick={() => setStep(3)} disabled={iskAmount <= 0} style={{
                 padding: "7px 16px", minWidth: 100,
                 background: iskAmount > 0 ? GOLD : "rgba(240,192,64,0.15)",
                 border: "none", borderRadius: 4,
-                color: iskAmount > 0 ? "#0a0a0f" : "#555",
+                color: iskAmount > 0 ? "var(--ev-bg)" : "var(--ev-muted)",
                 fontSize: 12, fontWeight: 600,
                 cursor: iskAmount > 0 ? "pointer" : "not-allowed",
                 fontFamily: "monospace",
@@ -278,7 +278,7 @@ export default function BetModal({ match, tournamentId, onClose, onSuccess }: Be
             {/* Summary card */}
             <div style={{
               padding: 16, background: "rgba(240,192,64,0.04)",
-              border: "1px solid rgba(240,192,64,0.15)", borderRadius: 6, marginBottom: 16,
+              border: "0.5px solid var(--ev-border2)", borderRadius: 10, marginBottom: 16,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
                 <div style={{ borderRadius: "50%", overflow: "hidden", width: 48, height: 48, flexShrink: 0 }}>
@@ -291,14 +291,14 @@ export default function BetModal({ match, tournamentId, onClose, onSuccess }: Be
                 <div>
                   <div style={{ color: GOLD, fontSize: 14, fontWeight: 600 }}>{selectedEntrant.character_name}</div>
                   {selectedEntrant.corporation_name && (
-                    <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>{selectedEntrant.corporation_name}</div>
+                    <div style={{ color: "var(--ev-muted)", fontSize: 11, marginTop: 2 }}>{selectedEntrant.corporation_name}</div>
                   )}
                 </div>
                 <div style={{ marginLeft: "auto", color: GOLD, fontSize: 20, fontFamily: "monospace", fontWeight: 700 }}>
                   {formatISK(iskAmount)}
                 </div>
               </div>
-              <div style={{ color: "#888", fontSize: 11, fontFamily: "monospace", lineHeight: 1.6 }}>
+              <div style={{ color: "var(--ev-muted)", fontSize: 11, fontFamily: "monospace", lineHeight: 1.6 }}>
                 You are betting{" "}
                 <span style={{ color: GOLD }}>{formatISK(iskAmount)}</span>{" "}
                 on {selectedEntrant.character_name}{" "}
@@ -319,13 +319,13 @@ export default function BetModal({ match, tournamentId, onClose, onSuccess }: Be
               <button onClick={() => { setStep(2); setError(null) }} disabled={loading} style={{
                 padding: "7px 16px", background: "transparent",
                 border: "1px solid rgba(255,255,255,0.1)", borderRadius: 4,
-                color: "#666", fontSize: 12, cursor: loading ? "not-allowed" : "pointer", fontFamily: "monospace",
+                color: "var(--ev-muted)", fontSize: 12, cursor: loading ? "not-allowed" : "pointer", fontFamily: "monospace",
               }}>← Back</button>
               <button onClick={handleConfirm} disabled={loading} style={{
                 padding: "7px 20px", minWidth: 130,
                 background: loading ? "rgba(240,192,64,0.2)" : GOLD,
                 border: "none", borderRadius: 4,
-                color: loading ? "#555" : "#0a0a0f",
+                color: loading ? "var(--ev-muted)" : "var(--ev-bg)",
                 fontSize: 12, fontWeight: 600,
                 cursor: loading ? "not-allowed" : "pointer",
                 fontFamily: "monospace",

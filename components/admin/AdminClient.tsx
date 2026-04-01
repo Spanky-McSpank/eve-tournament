@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
-const GOLD = "#f0c040"
+const GOLD = "var(--ev-gold-light)"
 
 interface Tournament {
   id: string
@@ -121,35 +121,35 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
   const registrationTournaments = tournaments.filter((t) => t.status === "registration")
 
   const cardStyle: React.CSSProperties = {
-    background: "#0d0d1a",
-    border: "1px solid rgba(240,192,64,0.12)",
-    borderRadius: 6,
+    background: "var(--ev-card)",
+    border: "0.5px solid var(--ev-border2)",
+    borderRadius: 10,
     padding: 24,
     marginBottom: 24,
   }
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "8px 12px",
-    background: "#080810", border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: 4, color: "#c8c8c8", fontSize: 13, fontFamily: "monospace",
+    background: "var(--ev-card2)", border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 4, color: "var(--ev-text)", fontSize: 13, fontFamily: "monospace",
     outline: "none", boxSizing: "border-box",
   }
 
   const labelStyle: React.CSSProperties = {
-    display: "block", color: "#666", fontSize: 10,
+    display: "block", color: "var(--ev-muted)", fontSize: 10,
     fontFamily: "monospace", letterSpacing: 1, marginBottom: 6,
   }
 
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#0a0a0f",
+      background: "var(--ev-bg)",
       backgroundImage: [
-        "linear-gradient(rgba(240,192,64,0.03) 1px, transparent 1px)",
-        "linear-gradient(90deg, rgba(240,192,64,0.03) 1px, transparent 1px)",
+        "linear-gradient(rgba(200,150,12,0.03) 1px, transparent 1px)",
+        "linear-gradient(90deg, rgba(200,150,12,0.03) 1px, transparent 1px)",
       ].join(", "),
       backgroundSize: "32px 32px",
-      color: "#c8c8c8",
+      color: "var(--ev-text)",
       fontFamily: "system-ui, sans-serif",
       padding: 24,
     }}>
@@ -158,7 +158,7 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
           <h1 style={{ color: GOLD, fontSize: 22, fontFamily: "monospace", fontWeight: 700, margin: 0 }}>
             ADMIN PANEL
           </h1>
-          <Link href="/" style={{ marginLeft: "auto", fontSize: 12, color: "#555", fontFamily: "monospace", textDecoration: "none" }}>
+          <Link href="/" style={{ marginLeft: "auto", fontSize: 12, color: "var(--ev-muted)", fontFamily: "monospace", textDecoration: "none" }}>
             ← Home
           </Link>
         </div>
@@ -194,7 +194,7 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
                         background: createCount === n ? GOLD : "transparent",
                         border: `1px solid ${createCount === n ? GOLD : "rgba(255,255,255,0.12)"}`,
                         borderRadius: n === 16 ? "4px 0 0 4px" : n === 64 ? "0 4px 4px 0" : "0",
-                        color: createCount === n ? "#0a0a0f" : "#888",
+                        color: createCount === n ? "var(--ev-bg)" : "var(--ev-muted)",
                         fontSize: 13, fontWeight: createCount === n ? 700 : 400,
                         cursor: "pointer", fontFamily: "monospace",
                       }}
@@ -215,7 +215,7 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
                 marginTop: 16, padding: "8px 24px",
                 background: createLoading || !createName.trim() ? "rgba(240,192,64,0.15)" : GOLD,
                 border: "none", borderRadius: 4,
-                color: createLoading || !createName.trim() ? "#555" : "#0a0a0f",
+                color: createLoading || !createName.trim() ? "var(--ev-muted)" : "var(--ev-bg)",
                 fontSize: 12, fontWeight: 600, cursor: createLoading || !createName.trim() ? "not-allowed" : "pointer",
                 fontFamily: "monospace",
               }}
@@ -280,7 +280,7 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
                 <div>
                   <div style={{ color: "#22c55e", fontSize: 13, fontWeight: 600 }}>Added: {addedEntrant.character_name}</div>
                   {addedEntrant.corporation_name && (
-                    <div style={{ color: "#555", fontSize: 11 }}>{addedEntrant.corporation_name}</div>
+                    <div style={{ color: "var(--ev-muted)", fontSize: 11 }}>{addedEntrant.corporation_name}</div>
                   )}
                 </div>
               </div>
@@ -292,7 +292,7 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
                 marginTop: 16, padding: "8px 24px",
                 background: addLoading || !addName.trim() || !addTournamentId ? "rgba(240,192,64,0.15)" : GOLD,
                 border: "none", borderRadius: 4,
-                color: addLoading || !addName.trim() || !addTournamentId ? "#555" : "#0a0a0f",
+                color: addLoading || !addName.trim() || !addTournamentId ? "var(--ev-muted)" : "var(--ev-bg)",
                 fontSize: 12, fontWeight: 600,
                 cursor: addLoading || !addName.trim() || !addTournamentId ? "not-allowed" : "pointer",
                 fontFamily: "monospace",
@@ -325,7 +325,7 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
                     <th key={h} style={{
                       textAlign: "left", padding: "6px 12px",
                       fontSize: 10, fontFamily: "monospace", letterSpacing: 1,
-                      color: "#555", fontWeight: 600,
+                      color: "var(--ev-muted)", fontWeight: 600,
                       borderBottom: "1px solid rgba(255,255,255,0.06)",
                     }}>{h.toUpperCase()}</th>
                   ))}
@@ -336,25 +336,25 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
                   const canGenerate = t.status === "registration" && t.currentEntrants >= 4
                   return (
                     <tr key={t.id} style={{ background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
-                      <td style={{ padding: "10px 12px", fontSize: 13, color: "#c8c8c8" }}>{t.name}</td>
+                      <td style={{ padding: "10px 12px", fontSize: 13, color: "var(--ev-text)" }}>{t.name}</td>
                       <td style={{ padding: "10px 12px" }}>
                         <span style={{
                           fontSize: 10, fontFamily: "monospace", letterSpacing: 1,
-                          padding: "2px 8px", border: `1px solid ${STATUS_COLOR[t.status] ?? "#555"}`,
-                          borderRadius: 3, color: STATUS_COLOR[t.status] ?? "#555",
+                          padding: "2px 8px", border: `1px solid ${STATUS_COLOR[t.status] ?? "var(--ev-muted)"}`,
+                          borderRadius: 3, color: STATUS_COLOR[t.status] ?? "var(--ev-muted)",
                           textTransform: "uppercase",
                         }}>{t.status}</span>
                       </td>
-                      <td style={{ padding: "10px 12px", fontFamily: "monospace", fontSize: 12, color: "#888" }}>
+                      <td style={{ padding: "10px 12px", fontFamily: "monospace", fontSize: 12, color: "var(--ev-muted)" }}>
                         {t.currentEntrants} / {t.entrant_count}
                       </td>
-                      <td style={{ padding: "10px 12px", fontFamily: "monospace", fontSize: 11, color: "#555" }}>
+                      <td style={{ padding: "10px 12px", fontFamily: "monospace", fontSize: 11, color: "var(--ev-muted)" }}>
                         {new Date(t.created_at).toLocaleDateString()}
                       </td>
                       <td style={{ padding: "10px 12px" }}>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                           <Link href={`/tournament/${t.id}`} style={{
-                            fontSize: 11, color: "#c8c8c8", textDecoration: "none",
+                            fontSize: 11, color: "var(--ev-text)", textDecoration: "none",
                             padding: "3px 10px", border: "1px solid rgba(255,255,255,0.12)",
                             borderRadius: 3, fontFamily: "monospace",
                           }}>View</Link>

@@ -5,28 +5,65 @@ import { useState } from "react"
 import type { BracketWithEntrants, Entrant } from "@/lib/bracket"
 import ResultModal from "./ResultModal"
 
-const GOLD = "#f0c040"
-const MUTED = "#c8c8c8"
+const C = {
+  gold: "var(--ev-gold)",
+  goldLight: "var(--ev-gold-light)",
+  champagne: "var(--ev-champagne)",
+  card: "var(--ev-card)",
+  card2: "var(--ev-card2)",
+  border2: "var(--ev-border2)",
+  steel: "var(--ev-steel)",
+  text: "var(--ev-text)",
+  muted: "var(--ev-muted)",
+  live: "var(--ev-live)",
+  danger: "var(--ev-danger)",
+} as const
 
 function CapsuleerSilhouette({ size }: { size: number }) {
   const r = size / 2
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <circle cx="24" cy="24" r="24" fill="#1a1a2e" />
-      <circle cx="24" cy="18" r={r * 0.35} fill="#2a2a3e" />
-      <ellipse cx="24" cy="38" rx={r * 0.52} ry={r * 0.43} fill="#2a2a3e" />
+      <circle cx="24" cy="24" r="24" fill="#0D1420" />
+      <circle cx="24" cy="18" r={r * 0.35} fill="#1E2D45" />
+      <ellipse cx="24" cy="38" rx={r * 0.52} ry={r * 0.43} fill="#1E2D45" />
     </svg>
   )
 }
 
+function OddsPill({
+  oddsPercent, oddsFractional, hasData, isFavorite,
+}: {
+  oddsPercent?: number
+  oddsFractional?: string
+  hasData?: boolean
+  isFavorite?: boolean
+}) {
+  if (hasData === false) {
+    return (
+      <span style={{
+        display: "inline-block",
+        background: C.steel, border: `0.5px solid ${C.border2}`,
+        borderRadius: 20, padding: "2px 8px",
+        fontSize: 10, fontFamily: "monospace", color: C.muted,
+      }}>No Data</span>
+    )
+  }
+  if (oddsPercent === undefined) return null
+  return (
+    <span style={{
+      display: "inline-block",
+      background: C.steel, border: `0.5px solid ${C.border2}`,
+      borderRadius: 20, padding: "3px 10px",
+      fontSize: 10, fontFamily: "monospace",
+      color: isFavorite ? C.champagne : C.muted,
+    }}>
+      {oddsPercent}% · {oddsFractional}
+    </span>
+  )
+}
+
 function FighterPanel({
-  entrant,
-  isWinner,
-  isLoser,
-  oddsPercent,
-  oddsFractional,
-  hasData,
-  side,
+  entrant, isWinner, isLoser, oddsPercent, oddsFractional, hasData, side,
 }: {
   entrant: Entrant | null
   isWinner: boolean
@@ -41,13 +78,15 @@ function FighterPanel({
       <div style={{
         flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
         minHeight: 88, padding: "10px 14px",
-        background: "rgba(255,255,255,0.015)",
-        borderRadius: side === "left" ? "4px 0 0 4px" : "0 4px 4px 0",
+        background: "rgba(30,45,69,0.3)",
+        borderRadius: side === "left" ? "9px 0 0 9px" : "0 9px 9px 0",
       }}>
-        <span style={{ color: "#3a3a4a", fontSize: 11, fontFamily: "monospace" }}>TBD</span>
+        <span style={{ color: C.muted, fontSize: 11, fontFamily: "monospace", opacity: 0.4 }}>TBD</span>
       </div>
     )
   }
+
+  const isFavorite = oddsPercent !== undefined && oddsPercent > 50
 
   return (
     <div style={{
@@ -56,28 +95,26 @@ function FighterPanel({
       flexDirection: side === "right" ? "row-reverse" : "row",
       alignItems: "center",
       gap: 10,
-      padding: "10px 14px",
-      background: isWinner ? "rgba(240,192,64,0.05)" : isLoser ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.02)",
-      borderRadius: side === "left" ? "4px 0 0 4px" : "0 4px 4px 0",
-      borderLeft: isWinner && side === "left" ? `3px solid ${GOLD}` : undefined,
-      borderRight: isWinner && side === "right" ? `3px solid ${GOLD}` : undefined,
-      opacity: isLoser ? 0.4 : 1,
+      padding: "12px 14px",
+      background: isWinner
+        ? "rgba(200,150,12,0.07)"
+        : isLoser ? "rgba(0,0,0,0.15)" : "transparent",
+      borderRadius: side === "left" ? "9px 0 0 9px" : "0 9px 9px 0",
+      borderLeft: isWinner && side === "left" ? `3px solid ${C.gold}` : undefined,
+      borderRight: isWinner && side === "right" ? `3px solid ${C.gold}` : undefined,
+      opacity: isLoser ? 0.38 : 1,
       transition: "opacity 0.3s",
     }}>
-      {/* Portrait */}
       <div style={{ flexShrink: 0, borderRadius: "50%", overflow: "hidden", width: 48, height: 48 }}>
-        {entrant.portrait_url ? (
-          <Image src={entrant.portrait_url} alt={entrant.character_name} width={48} height={48}
-            style={{ borderRadius: "50%", objectFit: "cover" }} />
-        ) : (
-          <CapsuleerSilhouette size={48} />
-        )}
+        {entrant.portrait_url
+          ? <Image src={entrant.portrait_url} alt={entrant.character_name} width={48} height={48}
+              style={{ borderRadius: "50%", objectFit: "cover" }} />
+          : <CapsuleerSilhouette size={48} />
+        }
       </div>
-
-      {/* Info */}
       <div style={{ flex: 1, minWidth: 0, textAlign: side === "right" ? "right" : "left" }}>
         <div style={{
-          color: isWinner ? GOLD : MUTED,
+          color: isWinner ? C.champagne : C.text,
           fontWeight: isWinner ? 600 : 400,
           fontSize: 13,
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
@@ -85,22 +122,17 @@ function FighterPanel({
           {entrant.character_name}
         </div>
         {entrant.corporation_name && (
-          <div style={{ color: "#555", fontSize: 11, marginTop: 1 }}>
+          <div style={{ color: C.muted, fontSize: 10, marginTop: 1 }}>
             {entrant.corporation_name}
           </div>
         )}
-        <div style={{ marginTop: 3 }}>
-          {hasData === false ? (
-            <span style={{
-              fontSize: 10, padding: "1px 5px",
-              border: "1px solid #333", borderRadius: 3,
-              color: "#555", fontFamily: "monospace",
-            }}>No Data</span>
-          ) : oddsPercent !== undefined ? (
-            <span style={{ fontSize: 11, fontFamily: "monospace", color: "#777" }}>
-              {oddsPercent}% · {oddsFractional}
-            </span>
-          ) : null}
+        <div style={{ marginTop: 5 }}>
+          <OddsPill
+            oddsPercent={oddsPercent}
+            oddsFractional={oddsFractional}
+            hasData={hasData}
+            isFavorite={isFavorite}
+          />
         </div>
       </div>
     </div>
@@ -121,19 +153,44 @@ export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCard
   const canEnterResult = isAdmin && !isComplete && bothSet
 
   const e1IsWinner = isComplete && match.winner?.id === match.entrant1?.id
-  const e1IsLoser = isComplete && match.winner?.id !== match.entrant1?.id
+  const e1IsLoser = isComplete && !e1IsWinner && Boolean(match.entrant1)
   const e2IsWinner = isComplete && match.winner?.id === match.entrant2?.id
-  const e2IsLoser = isComplete && match.winner?.id !== match.entrant2?.id
+  const e2IsLoser = isComplete && !e2IsWinner && Boolean(match.entrant2)
 
   return (
     <>
       <div style={{
-        background: "#0d0d1a",
-        border: "1px solid rgba(240,192,64,0.12)",
-        borderRadius: 5,
+        background: C.card,
+        border: `0.5px solid ${C.border2}`,
+        borderRadius: 10,
         overflow: "hidden",
         width: 320,
       }}>
+        {/* Status pill */}
+        <div style={{
+          padding: "6px 12px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          borderBottom: `0.5px solid ${C.border2}`,
+          background: C.card2,
+        }}>
+          <span style={{ fontSize: 9, fontFamily: "monospace", color: C.muted, letterSpacing: 1 }}>
+            R{match.round} · M{match.match_number}
+          </span>
+          {isComplete ? (
+            <span style={{
+              fontSize: 9, fontFamily: "monospace", letterSpacing: 1,
+              padding: "2px 8px", borderRadius: 20,
+              background: "#1A1508", color: C.champagne, border: `0.5px solid ${C.border2}`,
+            }}>Match Complete</span>
+          ) : bothSet ? (
+            <span style={{
+              fontSize: 9, fontFamily: "monospace", letterSpacing: 1,
+              padding: "2px 8px", borderRadius: 20,
+              background: "#052010", color: C.live, border: "0.5px solid rgba(34,197,94,0.27)",
+            }}>● Live Odds</span>
+          ) : null}
+        </div>
+
         <div style={{ display: "flex", alignItems: "stretch" }}>
           <FighterPanel
             entrant={match.entrant1}
@@ -146,10 +203,10 @@ export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCard
           />
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "0 6px", flexShrink: 0,
-            background: "rgba(240,192,64,0.04)",
+            padding: "0 8px", flexShrink: 0,
+            background: "rgba(200,150,12,0.04)",
           }}>
-            <span style={{ color: "#383848", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>VS</span>
+            <span style={{ color: C.muted, fontSize: 9, fontFamily: "monospace", letterSpacing: 2, opacity: 0.4 }}>VS</span>
           </div>
           <FighterPanel
             entrant={match.entrant2}
@@ -164,23 +221,23 @@ export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCard
 
         {(match.killmail_url || canEnterResult) && (
           <div style={{
-            borderTop: "1px solid rgba(240,192,64,0.07)",
-            padding: "5px 10px",
+            borderTop: `0.5px solid ${C.border2}`,
+            padding: "6px 12px",
             display: "flex", gap: 8, justifyContent: "flex-end",
-            background: "rgba(0,0,0,0.25)",
+            background: C.card2,
           }}>
             {match.killmail_url && (
               <a href={match.killmail_url} target="_blank" rel="noopener noreferrer" style={{
-                fontSize: 11, color: GOLD, textDecoration: "none",
-                padding: "2px 8px", border: `1px solid rgba(240,192,64,0.3)`,
-                borderRadius: 3, fontFamily: "monospace",
+                fontSize: 11, color: C.champagne, textDecoration: "none",
+                padding: "3px 10px", border: `0.5px solid ${C.border2}`,
+                borderRadius: 6, fontFamily: "monospace",
               }}>⚔ View Kill</a>
             )}
             {canEnterResult && (
               <button onClick={() => setShowModal(true)} style={{
-                fontSize: 11, color: GOLD, background: "transparent",
-                padding: "2px 8px", border: `1px solid rgba(240,192,64,0.35)`,
-                borderRadius: 3, cursor: "pointer", fontFamily: "monospace",
+                fontSize: 11, color: C.gold, background: "transparent",
+                padding: "3px 10px", border: `1px solid ${C.gold}`,
+                borderRadius: 6, cursor: "pointer", fontFamily: "monospace",
               }}>Enter Result</button>
             )}
           </div>

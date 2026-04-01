@@ -77,7 +77,7 @@ export default function BracketView({ initialBrackets, tournamentId, isAdmin }: 
 
   if (roundGroups.length === 0) {
     return (
-      <div style={{ color: "#555", fontFamily: "monospace", fontSize: 12, padding: 24 }}>
+      <div style={{ color: "var(--ev-muted)", fontFamily: "monospace", fontSize: 12, padding: 24 }}>
         No bracket data available.
       </div>
     )

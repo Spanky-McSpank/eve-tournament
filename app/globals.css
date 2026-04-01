@@ -117,14 +117,78 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ── EVE Design System ───────────────────────────────────────────────────── */
+:root {
+  --ev-bg: #06080F;
+  --ev-card: #0D1420;
+  --ev-card2: #111B2E;
+  --ev-gold: #C8960C;
+  --ev-gold-light: #E8B020;
+  --ev-champagne: #F0D878;
+  --ev-border: #2A2215;
+  --ev-border2: rgba(200, 150, 12, 0.27);
+  --ev-text: #D8CFA8;
+  --ev-muted: #6B7280;
+  --ev-live: #22C55E;
+  --ev-danger: #EF4444;
+  --ev-steel: #1E2D45;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--ev-bg);
+    color: var(--ev-text);
+    font-family: system-ui, -apple-system, sans-serif;
   }
   html {
     @apply font-sans;
+  }
+  .ev-mono {
+    font-family: ui-monospace, "Geist Mono", monospace;
+    color: var(--ev-champagne);
+  }
+  .ev-page {
+    background-color: var(--ev-bg);
+    background-image:
+      linear-gradient(rgba(200,150,12,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,150,12,0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    min-height: 100vh;
+    color: var(--ev-text);
+  }
+  .ev-card {
+    background: var(--ev-card);
+    border: 0.5px solid var(--ev-border2);
+    border-radius: 10px;
+  }
+  .ev-btn-primary {
+    background: var(--ev-gold);
+    color: #080500;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .ev-btn-primary:disabled {
+    background: rgba(200,150,12,0.2);
+    color: #555;
+    cursor: not-allowed;
+  }
+  .ev-btn-outline {
+    background: transparent;
+    color: var(--ev-gold);
+    border: 1px solid var(--ev-gold);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .ev-btn-ghost {
+    background: transparent;
+    color: var(--ev-muted);
+    border: 1px solid var(--ev-border);
+    border-radius: 6px;
+    cursor: pointer;
   }
 }

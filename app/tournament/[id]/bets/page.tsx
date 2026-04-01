@@ -7,7 +7,7 @@ import type { BracketWithEntrants } from "@/lib/bracket"
 import OddsCard from "@/components/bookie/OddsCard"
 import RecordBoard from "@/components/bookie/RecordBoard"
 
-const GOLD = "#f0c040"
+const GOLD = "var(--ev-gold-light)"
 type Tab = "matches" | "records"
 
 interface Tournament { id: string; name: string; status: string }
@@ -59,17 +59,17 @@ export default function BetsPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#0a0a0f",
+      background: "var(--ev-bg)",
       backgroundImage: [
-        "linear-gradient(rgba(240,192,64,0.03) 1px, transparent 1px)",
-        "linear-gradient(90deg, rgba(240,192,64,0.03) 1px, transparent 1px)",
+        "linear-gradient(rgba(200,150,12,0.03) 1px, transparent 1px)",
+        "linear-gradient(90deg, rgba(200,150,12,0.03) 1px, transparent 1px)",
       ].join(", "),
       backgroundSize: "32px 32px",
-      color: "#c8c8c8",
+      color: "var(--ev-text)",
       fontFamily: "system-ui, sans-serif",
     }}>
       <div style={{
-        borderBottom: "1px solid rgba(240,192,64,0.12)",
+        borderBottom: "0.5px solid var(--ev-border2)",
         padding: "16px 24px",
         display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
       }}>
@@ -78,7 +78,7 @@ export default function BetsPage({ params }: { params: Promise<{ id: string }> }
         </h1>
         <div style={{ marginLeft: "auto" }}>
           <Link href={`/tournament//bracket`} style={{
-            fontSize: 12, color: "#c8c8c8", textDecoration: "none",
+            fontSize: 12, color: "var(--ev-text)", textDecoration: "none",
             padding: "5px 12px", border: "1px solid rgba(255,255,255,0.12)",
             borderRadius: 4, fontFamily: "monospace",
           }}>⚔ View Bracket</Link>
@@ -90,7 +90,7 @@ export default function BetsPage({ params }: { params: Promise<{ id: string }> }
           <button key={t} onClick={() => setTab(t)} style={{
             padding: "12px 20px", background: "transparent", border: "none",
             borderBottom: tab === t ? `2px solid ` : "2px solid transparent",
-            color: tab === t ? GOLD : "#666",
+            color: tab === t ? GOLD : "var(--ev-muted)",
             fontSize: 12, fontFamily: "monospace", letterSpacing: 1, cursor: "pointer",
             textTransform: "uppercase", marginBottom: -1,
           }}>

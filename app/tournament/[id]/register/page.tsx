@@ -6,7 +6,7 @@ import { use, useEffect, useState } from "react"
 import { useEveAuth } from "@/hooks/useEveAuth"
 import EveLoginButton from "@/components/ui/EveLoginButton"
 
-const GOLD = "#f0c040"
+const GOLD = "var(--ev-gold-light)"
 
 interface Tournament {
   id: string
@@ -34,10 +34,10 @@ function EfficiencyBar({ value }: { value: number }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-        <span style={{ fontSize: 10, fontFamily: "monospace", color: "#666" }}>ISK EFFICIENCY</span>
+        <span style={{ fontSize: 10, fontFamily: "monospace", color: "var(--ev-muted)" }}>ISK EFFICIENCY</span>
         <span style={{ fontSize: 11, fontFamily: "monospace", color }}>{pct}%</span>
       </div>
-      <div style={{ height: 4, background: "#1a1a2e", borderRadius: 2, overflow: "hidden" }}>
+      <div style={{ height: 4, background: "var(--ev-steel)", borderRadius: 2, overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, height: "100%", background: color, transition: "width 0.5s" }} />
       </div>
     </div>
@@ -97,13 +97,13 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
 
   const pageStyle: React.CSSProperties = {
     minHeight: "100vh",
-    background: "#0a0a0f",
+    background: "var(--ev-bg)",
     backgroundImage: [
-      "linear-gradient(rgba(240,192,64,0.03) 1px, transparent 1px)",
-      "linear-gradient(90deg, rgba(240,192,64,0.03) 1px, transparent 1px)",
+      "linear-gradient(rgba(200,150,12,0.03) 1px, transparent 1px)",
+      "linear-gradient(90deg, rgba(200,150,12,0.03) 1px, transparent 1px)",
     ].join(", "),
     backgroundSize: "32px 32px",
-    color: "#c8c8c8",
+    color: "var(--ev-text)",
     fontFamily: "system-ui, sans-serif",
     display: "flex", alignItems: "center", justifyContent: "center",
     padding: 24,
@@ -122,17 +122,17 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
     return (
       <div style={pageStyle}>
         <div style={{
-          background: "#0d0d1a", border: "1px solid rgba(240,192,64,0.12)",
-          borderRadius: 8, padding: 40, textAlign: "center", maxWidth: 400,
+          background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
+          borderRadius: 10, padding: 40, textAlign: "center", maxWidth: 400,
         }}>
           <div style={{ color: GOLD, fontSize: 18, fontFamily: "monospace", marginBottom: 12 }}>
             Registration Closed
           </div>
-          <div style={{ color: "#666", fontSize: 13, marginBottom: 20 }}>
+          <div style={{ color: "var(--ev-muted)", fontSize: 13, marginBottom: 20 }}>
             {!tournament ? "Tournament not found." : `This tournament is ${tournament.status}.`}
           </div>
           <Link href={tournament ? `/tournament/${id}` : "/"} style={{
-            color: "#c8c8c8", fontSize: 12, fontFamily: "monospace", textDecoration: "none",
+            color: "var(--ev-text)", fontSize: 12, fontFamily: "monospace", textDecoration: "none",
             padding: "6px 16px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4,
           }}>← Back</Link>
         </div>
@@ -145,13 +145,13 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
     return (
       <div style={pageStyle}>
         <div style={{
-          background: "#0d0d1a", border: "1px solid rgba(240,192,64,0.12)",
-          borderRadius: 8, padding: 40, textAlign: "center", maxWidth: 400,
+          background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
+          borderRadius: 10, padding: 40, textAlign: "center", maxWidth: 400,
         }}>
           <div style={{ color: GOLD, fontSize: 18, fontFamily: "monospace", marginBottom: 8 }}>
             {tournament.name}
           </div>
-          <div style={{ color: "#666", fontSize: 13, marginBottom: 24 }}>
+          <div style={{ color: "var(--ev-muted)", fontSize: 13, marginBottom: 24 }}>
             Log in with EVE Online to register for this tournament
           </div>
           <div style={{ display: "flex", justifyContent: "center" }}>
@@ -170,8 +170,8 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
     return (
       <div style={pageStyle}>
         <div style={{
-          background: "#0d0d1a", border: "1px solid rgba(240,192,64,0.12)",
-          borderRadius: 8, padding: 40, maxWidth: 440, width: "100%",
+          background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
+          borderRadius: 10, padding: 40, maxWidth: 440, width: "100%",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24 }}>
             <div style={{ borderRadius: "50%", overflow: "hidden", width: 96, height: 96, flexShrink: 0 }}>
@@ -179,28 +179,28 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
                 ? <Image src={myEntrant.portrait_url} alt={myEntrant.character_name} width={96} height={96}
                     style={{ borderRadius: "50%", objectFit: "cover" }} />
                 : <svg width={96} height={96} viewBox="0 0 96 96" fill="none">
-                    <circle cx="48" cy="48" r="48" fill="#1a1a2e" />
-                    <circle cx="48" cy="36" r="16" fill="#2a2a3e" />
-                    <ellipse cx="48" cy="76" rx="24" ry="20" fill="#2a2a3e" />
+                    <circle cx="48" cy="48" r="48" fill="var(--ev-steel)" />
+                    <circle cx="48" cy="36" r="16" fill="var(--ev-card2)" />
+                    <ellipse cx="48" cy="76" rx="24" ry="20" fill="var(--ev-card2)" />
                   </svg>
               }
             </div>
             <div>
               <div style={{ color: GOLD, fontSize: 18, fontWeight: 600 }}>{myEntrant.character_name}</div>
               {myEntrant.corporation_name && (
-                <div style={{ color: "#666", fontSize: 12, marginTop: 2 }}>{myEntrant.corporation_name}</div>
+                <div style={{ color: "var(--ev-muted)", fontSize: 12, marginTop: 2 }}>{myEntrant.corporation_name}</div>
               )}
             </div>
           </div>
 
           <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
             <div>
-              <div style={{ color: "#555", fontSize: 10, fontFamily: "monospace", letterSpacing: 1 }}>30D KILLS</div>
-              <div style={{ color: "#c8c8c8", fontSize: 16, fontFamily: "monospace" }}>{myEntrant.kills_30d}</div>
+              <div style={{ color: "var(--ev-muted)", fontSize: 10, fontFamily: "monospace", letterSpacing: 1 }}>30D KILLS</div>
+              <div style={{ color: "var(--ev-text)", fontSize: 16, fontFamily: "monospace" }}>{myEntrant.kills_30d}</div>
             </div>
             <div>
-              <div style={{ color: "#555", fontSize: 10, fontFamily: "monospace", letterSpacing: 1 }}>30D LOSSES</div>
-              <div style={{ color: "#c8c8c8", fontSize: 16, fontFamily: "monospace" }}>{myEntrant.losses_30d}</div>
+              <div style={{ color: "var(--ev-muted)", fontSize: 10, fontFamily: "monospace", letterSpacing: 1 }}>30D LOSSES</div>
+              <div style={{ color: "var(--ev-text)", fontSize: 16, fontFamily: "monospace" }}>{myEntrant.losses_30d}</div>
             </div>
           </div>
           <EfficiencyBar value={eff} />
@@ -208,14 +208,14 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
           <div style={{
             marginTop: 24, padding: "12px 0", textAlign: "center",
             color: "#22c55e", fontSize: 16, fontWeight: 600,
-            border: "1px solid rgba(34,197,94,0.3)", borderRadius: 6,
+            border: "1px solid rgba(34,197,94,0.3)", borderRadius: 10,
             background: "rgba(34,197,94,0.06)",
           }}>
             ✓ You&apos;re Registered
           </div>
           <div style={{ textAlign: "center", marginTop: 16 }}>
             <Link href={`/tournament/${id}`} style={{
-              fontSize: 12, color: "#888", fontFamily: "monospace", textDecoration: "none",
+              fontSize: 12, color: "var(--ev-muted)", fontFamily: "monospace", textDecoration: "none",
             }}>← View Tournament</Link>
           </div>
         </div>
@@ -229,8 +229,8 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
   return (
     <div style={pageStyle}>
       <div style={{
-        background: "#0d0d1a", border: "1px solid rgba(240,192,64,0.12)",
-        borderRadius: 8, padding: 40, maxWidth: 440, width: "100%",
+        background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
+        borderRadius: 10, padding: 40, maxWidth: 440, width: "100%",
       }}>
         <div style={{ color: GOLD, fontSize: 16, fontFamily: "monospace", marginBottom: 20, letterSpacing: 1 }}>
           {tournament.name}
@@ -247,8 +247,8 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
               />
             </div>
             <div>
-              <div style={{ color: "#c8c8c8", fontSize: 16, fontWeight: 500 }}>{character.character_name}</div>
-              <div style={{ color: "#555", fontSize: 11, marginTop: 4, fontFamily: "monospace" }}>
+              <div style={{ color: "var(--ev-text)", fontSize: 16, fontWeight: 500 }}>{character.character_name}</div>
+              <div style={{ color: "var(--ev-muted)", fontSize: 11, marginTop: 4, fontFamily: "monospace" }}>
                 Stats will be fetched on registration
               </div>
             </div>
@@ -269,8 +269,8 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
           style={{
             width: "100%", padding: "12px 0",
             background: registering || spotsRemaining <= 0 ? "rgba(240,192,64,0.15)" : GOLD,
-            border: "none", borderRadius: 6,
-            color: registering || spotsRemaining <= 0 ? "#555" : "#0a0a0f",
+            border: "none", borderRadius: 10,
+            color: registering || spotsRemaining <= 0 ? "var(--ev-muted)" : "var(--ev-bg)",
             fontSize: 14, fontWeight: 700,
             cursor: registering || spotsRemaining <= 0 ? "not-allowed" : "pointer",
             fontFamily: "monospace",
@@ -278,7 +278,7 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
         >
           {registering ? "Registering..." : `Register for ${tournament.name}`}
         </button>
-        <div style={{ textAlign: "center", marginTop: 10, color: "#555", fontSize: 11, fontFamily: "monospace" }}>
+        <div style={{ textAlign: "center", marginTop: 10, color: "var(--ev-muted)", fontSize: 11, fontFamily: "monospace" }}>
           Spots remaining: {spotsRemaining}
         </div>
       </div>

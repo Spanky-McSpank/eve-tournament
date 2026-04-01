@@ -72,7 +72,7 @@ export default async function BracketPage({
 
   const statusColor = {
     registration: "#4a9eff",
-    active: "#f0c040",
+    active: "var(--ev-gold-light)",
     complete: "#27ae60",
   }[t.status]
 
@@ -83,22 +83,22 @@ export default async function BracketPage({
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#0a0a0f",
+      background: "var(--ev-bg)",
       backgroundImage: [
-        "linear-gradient(rgba(240,192,64,0.03) 1px, transparent 1px)",
-        "linear-gradient(90deg, rgba(240,192,64,0.03) 1px, transparent 1px)",
+        "linear-gradient(rgba(200,150,12,0.03) 1px, transparent 1px)",
+        "linear-gradient(90deg, rgba(200,150,12,0.03) 1px, transparent 1px)",
       ].join(", "),
       backgroundSize: "32px 32px",
-      color: "#c8c8c8",
+      color: "var(--ev-text)",
       fontFamily: "system-ui, sans-serif",
     }}>
       {/* Header */}
       <div style={{
-        borderBottom: "1px solid rgba(240,192,64,0.12)",
+        borderBottom: "0.5px solid var(--ev-border2)",
         padding: "16px 24px",
         display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
       }}>
-        <h1 style={{ color: "#f0c040", fontSize: 18, fontFamily: "monospace", fontWeight: 600, margin: 0 }}>
+        <h1 style={{ color: "var(--ev-gold-light)", fontSize: 18, fontFamily: "monospace", fontWeight: 600, margin: 0 }}>
           {t.name}
         </h1>
         <span style={{
@@ -108,19 +108,19 @@ export default async function BracketPage({
         }}>
           {t.status}
         </span>
-        <span style={{ fontSize: 12, color: "#555", fontFamily: "monospace" }}>
+        <span style={{ fontSize: 12, color: "var(--ev-muted)", fontFamily: "monospace" }}>
           ⚔ {entrantCount > 0 ? entrantCount : t.entrant_count} Entrants
         </span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
           <Link href={`/tournament/${id}/bets`} style={{
-            fontSize: 12, color: "#c8c8c8", textDecoration: "none",
+            fontSize: 12, color: "var(--ev-text)", textDecoration: "none",
             padding: "5px 12px", border: "1px solid rgba(255,255,255,0.12)",
             borderRadius: 4, fontFamily: "monospace",
           }}>
             🎲 Bookie Board
           </Link>
           <Link href={`/tournament/${id}`} style={{
-            fontSize: 12, color: "#c8c8c8", textDecoration: "none",
+            fontSize: 12, color: "var(--ev-text)", textDecoration: "none",
             padding: "5px 12px", border: "1px solid rgba(255,255,255,0.12)",
             borderRadius: 4, fontFamily: "monospace",
           }}>
@@ -145,8 +145,8 @@ export default async function BracketPage({
               <div style={{
                 margin: "0 24px 24px",
                 padding: "20px 24px",
-                border: "1px solid rgba(240,192,64,0.5)",
-                borderRadius: 8,
+                border: "1px solid var(--ev-border2)",
+                borderRadius: 10,
                 background: "rgba(240,192,64,0.04)",
                 display: "flex", alignItems: "center", gap: 20,
               }}>
@@ -156,21 +156,21 @@ export default async function BracketPage({
                       width={64} height={64} style={{ borderRadius: "50%", objectFit: "cover" }} />
                   ) : (
                     <svg width={64} height={64} viewBox="0 0 64 64" fill="none">
-                      <circle cx="32" cy="32" r="32" fill="#1a1a2e" />
-                      <circle cx="32" cy="24" r="11" fill="#2a2a3e" />
-                      <ellipse cx="32" cy="52" rx="16" ry="13" fill="#2a2a3e" />
+                      <circle cx="32" cy="32" r="32" fill="var(--ev-steel)" />
+                      <circle cx="32" cy="24" r="11" fill="var(--ev-card2)" />
+                      <ellipse cx="32" cy="52" rx="16" ry="13" fill="var(--ev-card2)" />
                     </svg>
                   )}
                 </div>
                 <div>
-                  <div style={{ color: "#f0c040", fontSize: 20, fontWeight: 700, fontFamily: "monospace" }}>
+                  <div style={{ color: "var(--ev-gold-light)", fontSize: 20, fontWeight: 700, fontFamily: "monospace" }}>
                     {champion.character_name}
                   </div>
                   {champion.corporation_name && (
-                    <div style={{ color: "#888", fontSize: 12, marginTop: 2 }}>{champion.corporation_name}</div>
+                    <div style={{ color: "var(--ev-muted)", fontSize: 12, marginTop: 2 }}>{champion.corporation_name}</div>
                   )}
                 </div>
-                <div style={{ marginLeft: "auto", color: "#f0c040", fontSize: 24 }}>🏆 Champion</div>
+                <div style={{ marginLeft: "auto", color: "var(--ev-gold-light)", fontSize: 24 }}>🏆 Champion</div>
               </div>
             )}
 

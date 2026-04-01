@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import type { Entrant } from "@/lib/bracket"
 
-const GOLD = "#f0c040"
+const GOLD = "var(--ev-gold-light)"
 
 const STATUS_COLOR: Record<string, string> = {
   registration: "#3b82f6",
@@ -15,9 +15,9 @@ const STATUS_COLOR: Record<string, string> = {
 function CapsuleerIcon({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <circle cx="24" cy="24" r="24" fill="#1a1a2e" />
-      <circle cx="24" cy="18" r="8" fill="#2a2a3e" />
-      <ellipse cx="24" cy="38" rx="12" ry="10" fill="#2a2a3e" />
+      <circle cx="24" cy="24" r="24" fill="var(--ev-steel)" />
+      <circle cx="24" cy="18" r="8" fill="var(--ev-card2)" />
+      <ellipse cx="24" cy="38" rx="12" ry="10" fill="var(--ev-card2)" />
     </svg>
   )
 }
@@ -87,13 +87,13 @@ export default async function TournamentPage({
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#0a0a0f",
+      background: "var(--ev-bg)",
       backgroundImage: [
-        "linear-gradient(rgba(240,192,64,0.03) 1px, transparent 1px)",
-        "linear-gradient(90deg, rgba(240,192,64,0.03) 1px, transparent 1px)",
+        "linear-gradient(rgba(200,150,12,0.03) 1px, transparent 1px)",
+        "linear-gradient(90deg, rgba(200,150,12,0.03) 1px, transparent 1px)",
       ].join(", "),
       backgroundSize: "32px 32px",
-      color: "#c8c8c8",
+      color: "var(--ev-text)",
       fontFamily: "system-ui, sans-serif",
     }}>
       {/* Header */}
@@ -111,7 +111,7 @@ export default async function TournamentPage({
             borderRadius: 3, color: statusColor, textTransform: "uppercase",
           }}>{t.status}</span>
           {t.status !== "registration" && currentRound > 0 && (
-            <span style={{ fontSize: 12, color: "#555", fontFamily: "monospace" }}>
+            <span style={{ fontSize: 12, color: "var(--ev-muted)", fontFamily: "monospace" }}>
               Round {currentRound} of {totalRounds}
             </span>
           )}
@@ -123,8 +123,8 @@ export default async function TournamentPage({
         {t.status === "complete" && champion && (
           <div style={{
             padding: 28, marginBottom: 28,
-            border: "1px solid rgba(240,192,64,0.5)",
-            background: "rgba(240,192,64,0.04)", borderRadius: 8,
+            border: "1px solid var(--ev-border2)",
+            background: "rgba(240,192,64,0.04)", borderRadius: 10,
             display: "flex", alignItems: "center", gap: 24,
           }}>
             <div style={{ borderRadius: "50%", overflow: "hidden", width: 128, height: 128, flexShrink: 0 }}>
@@ -140,9 +140,9 @@ export default async function TournamentPage({
               </div>
               <div style={{ color: GOLD, fontSize: 28, fontWeight: 700 }}>{champion.character_name}</div>
               {champion.corporation_name && (
-                <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>{champion.corporation_name}</div>
+                <div style={{ color: "var(--ev-muted)", fontSize: 13, marginTop: 4 }}>{champion.corporation_name}</div>
               )}
-              <div style={{ marginTop: 8, fontFamily: "monospace", fontSize: 12, color: "#666" }}>
+              <div style={{ marginTop: 8, fontFamily: "monospace", fontSize: 12, color: "var(--ev-muted)" }}>
                 {Math.round(champion.efficiency * 100)}% efficiency · {champion.kills_30d}K / {champion.losses_30d}L
               </div>
             </div>
@@ -154,11 +154,11 @@ export default async function TournamentPage({
           <>
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{ fontSize: 12, fontFamily: "monospace", color: "#666" }}>
+                <span style={{ fontSize: 12, fontFamily: "monospace", color: "var(--ev-muted)" }}>
                   {entrantList.length} / {t.entrant_count} pilots registered
                 </span>
               </div>
-              <div style={{ height: 6, background: "#1a1a2e", borderRadius: 3, overflow: "hidden" }}>
+              <div style={{ height: 6, background: "var(--ev-steel)", borderRadius: 3, overflow: "hidden" }}>
                 <div style={{
                   width: `${(entrantList.length / t.entrant_count) * 100}%`,
                   height: "100%", background: GOLD, transition: "width 0.5s",
@@ -167,7 +167,7 @@ export default async function TournamentPage({
             </div>
             <Link href={`/tournament/${id}/register`} style={{
               display: "inline-block", padding: "12px 32px", marginBottom: 32,
-              background: GOLD, borderRadius: 6, color: "#0a0a0f",
+              background: GOLD, borderRadius: 10, color: "var(--ev-bg)",
               fontSize: 14, fontWeight: 700, fontFamily: "monospace", textDecoration: "none",
             }}>Register Now</Link>
           </>
@@ -178,13 +178,13 @@ export default async function TournamentPage({
           <div style={{ display: "flex", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
             <Link href={`/tournament/${id}/bracket`} style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "12px 28px", background: GOLD, borderRadius: 6,
-              color: "#0a0a0f", fontSize: 14, fontWeight: 700, fontFamily: "monospace", textDecoration: "none",
+              padding: "12px 28px", background: GOLD, borderRadius: 10,
+              color: "var(--ev-bg)", fontSize: 14, fontWeight: 700, fontFamily: "monospace", textDecoration: "none",
             }}>⚔ View Bracket</Link>
             <Link href={`/tournament/${id}/bets`} style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "12px 28px", background: "transparent",
-              border: `1px solid ${GOLD}`, borderRadius: 6,
+              border: `1px solid ${GOLD}`, borderRadius: 10,
               color: GOLD, fontSize: 14, fontWeight: 700, fontFamily: "monospace", textDecoration: "none",
             }}>🎲 Bookie Board</Link>
           </div>
@@ -193,7 +193,7 @@ export default async function TournamentPage({
         {/* Entrant portrait grid */}
         {entrantList.length > 0 && (
           <>
-            <h2 style={{ color: "#555", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 16 }}>
+            <h2 style={{ color: "var(--ev-muted)", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 16 }}>
               {t.status === "registration" ? "REGISTERED PILOTS" : "ENTRANTS"}
             </h2>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
@@ -209,7 +209,7 @@ export default async function TournamentPage({
                   {e.seed != null && (
                     <div style={{
                       position: "absolute", bottom: -2, right: -2,
-                      background: "#0a0a0f", border: `1px solid ${GOLD}`,
+                      background: "var(--ev-bg)", border: `1px solid ${GOLD}`,
                       borderRadius: "50%", width: 16, height: 16,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 8, color: GOLD, fontFamily: "monospace", fontWeight: 700,

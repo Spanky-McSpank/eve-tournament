@@ -7,8 +7,17 @@ import { formatISK } from "@/lib/utils"
 import type { BracketWithEntrants } from "@/lib/bracket"
 import BetModal from "./BetModal"
 
-const GOLD = "#f0c040"
-const SLATE = "#475569"
+const C = {
+  gold: "var(--ev-gold)",
+  champagne: "var(--ev-champagne)",
+  card: "var(--ev-card)",
+  card2: "var(--ev-card2)",
+  border2: "var(--ev-border2)",
+  steel: "var(--ev-steel)",
+  text: "var(--ev-text)",
+  muted: "var(--ev-muted)",
+  live: "var(--ev-live)",
+} as const
 
 interface BetRow {
   id: string
@@ -29,9 +38,9 @@ export interface OddsCardProps {
 function CapsuleerIcon({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <circle cx="24" cy="24" r="24" fill="#1a1a2e" />
-      <circle cx="24" cy="18" r="8" fill="#2a2a3e" />
-      <ellipse cx="24" cy="38" rx="12" ry="10" fill="#2a2a3e" />
+      <circle cx="24" cy="24" r="24" fill="#0D1420" />
+      <circle cx="24" cy="18" r="8" fill="#1E2D45" />
+      <ellipse cx="24" cy="38" rx="12" ry="10" fill="#1E2D45" />
     </svg>
   )
 }
@@ -61,6 +70,7 @@ export default function OddsCard({
   const totalPool = e1Pool + e2Pool
   const e1Pct = totalPool > 0 ? (e1Pool / totalPool) * 100 : 50
   const e2Pct = 100 - e1Pct
+  const leadingPool = e1Pool >= e2Pool ? "left" : "right"
 
   const hasBet = currentCharacterId
     ? bets.some((b) => Number(b.bettor_character_id) === currentCharacterId)
@@ -74,15 +84,16 @@ export default function OddsCard({
     if (!entrant) {
       return (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-          <span style={{ color: "#333", fontSize: 11, fontFamily: "monospace" }}>TBD</span>
+          <span style={{ color: C.muted, fontSize: 11, fontFamily: "monospace", opacity: 0.4 }}>TBD</span>
         </div>
       )
     }
     const isWinner = isComplete && match.winner?.id === entrant.id
+    const isFavorite = odds?.impliedProb !== undefined && odds.impliedProb > 0.5
     return (
       <div style={{
         flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-        gap: 5, padding: "12px 8px", textAlign: "center",
+        gap: 6, padding: "14px 8px", textAlign: "center",
       }}>
         <div style={{ borderRadius: "50%", overflow: "hidden", width: 48, height: 48, flexShrink: 0 }}>
           {entrant.portrait_url
@@ -91,19 +102,29 @@ export default function OddsCard({
             : <CapsuleerIcon size={48} />
           }
         </div>
-        <div style={{ color: isWinner ? GOLD : "#c8c8c8", fontSize: 12, fontWeight: isWinner ? 600 : 400, lineHeight: 1.3 }}>
+        <div style={{ color: isWinner ? C.champagne : C.text, fontSize: 12, fontWeight: isWinner ? 600 : 400, lineHeight: 1.3 }}>
           {entrant.character_name}
         </div>
         {entrant.corporation_name && (
-          <div style={{ color: "#555", fontSize: 10 }}>{entrant.corporation_name}</div>
+          <div style={{ color: C.muted, fontSize: 10 }}>{entrant.corporation_name}</div>
         )}
         {odds && (
-          <div style={{ fontFamily: "monospace", fontSize: 11, color: "#777" }}>
-            {odds.hasData === false
-              ? <span style={{ border: "1px solid #333", borderRadius: 3, padding: "1px 5px", color: "#555", fontSize: 10 }}>No Data</span>
-              : <>{odds.percentage}% · {odds.fractional}</>
-            }
-          </div>
+          odds.hasData === false ? (
+            <span style={{
+              background: C.steel, border: `0.5px solid ${C.border2}`,
+              borderRadius: 20, padding: "2px 8px",
+              fontSize: 10, fontFamily: "monospace", color: C.muted,
+            }}>No Data</span>
+          ) : (
+            <span style={{
+              background: C.steel, border: `0.5px solid ${C.border2}`,
+              borderRadius: 20, padding: "3px 10px",
+              fontSize: 10, fontFamily: "monospace",
+              color: isFavorite ? C.champagne : C.muted,
+            }}>
+              {odds.percentage}% · {odds.fractional}
+            </span>
+          )
         )}
       </div>
     )
@@ -112,50 +133,70 @@ export default function OddsCard({
   return (
     <>
       <div style={{
-        background: "#0d0d1a",
-        border: "1px solid rgba(240,192,64,0.12)",
-        borderRadius: 6, overflow: "hidden",
+        background: C.card, border: `0.5px solid ${C.border2}`,
+        borderRadius: 10, overflow: "hidden",
       }}>
         {/* Match header */}
         <div style={{
           padding: "7px 14px",
-          borderBottom: "1px solid rgba(240,192,64,0.06)",
-          fontSize: 10, fontFamily: "monospace", color: "#4a4a5a", letterSpacing: 1,
+          borderBottom: `0.5px solid ${C.border2}`,
+          background: C.card2,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          ROUND {match.round} · MATCH {match.match_number}
+          <span style={{ fontSize: 10, fontFamily: "monospace", color: C.muted, letterSpacing: 1 }}>
+            ROUND {match.round} · MATCH {match.match_number}
+          </span>
+          {!isComplete && (
+            <span style={{
+              fontSize: 9, fontFamily: "monospace", letterSpacing: 1,
+              padding: "2px 8px", borderRadius: 20,
+              background: "#052010", color: C.live, border: "0.5px solid rgba(34,197,94,0.27)",
+            }}>● Live</span>
+          )}
         </div>
 
         {/* Fighters */}
         <div style={{ display: "flex", alignItems: "stretch" }}>
           <FighterCol side="left" />
           <div style={{
-            display: "flex", alignItems: "center", padding: "0 4px",
-            color: "#252535", fontSize: 9, fontFamily: "monospace", letterSpacing: 2, flexShrink: 0,
+            display: "flex", alignItems: "center", padding: "0 6px",
+            color: C.muted, fontSize: 9, fontFamily: "monospace", letterSpacing: 2,
+            flexShrink: 0, opacity: 0.3,
           }}>VS</div>
           <FighterCol side="right" />
         </div>
 
         {/* Pool bar */}
-        <div style={{ padding: "8px 14px 6px" }}>
-          <div style={{ textAlign: "center", fontSize: 10, fontFamily: "monospace", color: "#5a5a6a", marginBottom: 5 }}>
-            {totalPool > 0 ? `Pool: ${formatISK(totalPool)}` : "No bets yet"}
+        <div style={{ padding: "8px 14px 8px" }}>
+          <div style={{ textAlign: "center", fontSize: 10, fontFamily: "monospace", color: C.muted, marginBottom: 6 }}>
+            {totalPool > 0
+              ? <span><span style={{ color: C.champagne }}>{formatISK(totalPool)}</span> in pool</span>
+              : "No bets yet"}
           </div>
-          <div style={{ display: "flex", height: 4, borderRadius: 2, overflow: "hidden", background: "#12121e" }}>
-            <div style={{ width: `${e1Pct}%`, background: GOLD, transition: "width 0.4s" }} />
-            <div style={{ width: `${e2Pct}%`, background: SLATE, transition: "width 0.4s" }} />
+          <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: C.steel }}>
+            <div style={{
+              width: `${e1Pct}%`,
+              background: leadingPool === "left" ? "var(--ev-gold)" : C.steel,
+              transition: "width 0.4s",
+            }} />
+            <div style={{
+              width: `${e2Pct}%`,
+              background: leadingPool === "right" ? "var(--ev-gold)" : C.steel,
+              transition: "width 0.4s",
+            }} />
           </div>
         </div>
 
         {/* Recent bets */}
         {recentBets.length > 0 && (
-          <div style={{ padding: "4px 14px 6px" }}>
+          <div style={{ padding: "2px 14px 8px" }}>
             {recentBets.map((bet) => {
               const fname = bet.predicted_winner_id === match.entrant1?.id
                 ? match.entrant1?.character_name
                 : match.entrant2?.character_name
               return (
-                <div key={bet.id} style={{ fontSize: 10, color: "#40404e", fontFamily: "monospace", lineHeight: 1.8 }}>
-                  {bet.bettor_name} bet {formatISK(Number(bet.isk_amount))} on {fname}
+                <div key={bet.id} style={{ fontSize: 10, color: C.muted, fontFamily: "monospace", lineHeight: 1.9, opacity: 0.6 }}>
+                  {bet.bettor_name} · <span style={{ color: C.champagne }}>{formatISK(Number(bet.isk_amount))}</span> on {fname}
                 </div>
               )
             })}
@@ -166,27 +207,27 @@ export default function OddsCard({
         <div style={{ padding: "8px 14px 12px" }}>
           {isComplete ? (
             <button disabled style={{
-              width: "100%", padding: "7px 0", background: "transparent",
-              border: "1px solid rgba(255,255,255,0.07)", borderRadius: 4,
-              color: "#383840", fontSize: 12, fontFamily: "monospace", cursor: "not-allowed",
+              width: "100%", padding: "8px 0", background: "transparent",
+              border: `0.5px solid ${C.border2}`, borderRadius: 6,
+              color: C.muted, fontSize: 12, fontFamily: "monospace", cursor: "not-allowed", opacity: 0.5,
             }}>Match Complete</button>
           ) : hasBet ? (
             <button disabled style={{
-              width: "100%", padding: "7px 0", background: "transparent",
-              border: "1px solid rgba(240,192,64,0.2)", borderRadius: 4,
-              color: "rgba(240,192,64,0.4)", fontSize: 12, fontFamily: "monospace", cursor: "not-allowed",
+              width: "100%", padding: "8px 0", background: "transparent",
+              border: `1px solid rgba(200,150,12,0.3)`, borderRadius: 6,
+              color: "rgba(200,150,12,0.5)", fontSize: 12, fontFamily: "monospace", cursor: "not-allowed",
             }}>Bet Placed ✓</button>
           ) : !currentCharacterId ? (
             <button onClick={() => { window.location.href = "/api/auth/eve" }} style={{
-              width: "100%", padding: "7px 0", background: "transparent",
-              border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4,
-              color: "#888", fontSize: 12, fontFamily: "monospace", cursor: "pointer",
+              width: "100%", padding: "8px 0", background: "transparent",
+              border: `0.5px solid ${C.border2}`, borderRadius: 6,
+              color: C.muted, fontSize: 12, fontFamily: "monospace", cursor: "pointer",
             }}>Login to Bet</button>
           ) : (
             <button onClick={() => setShowModal(true)} style={{
-              width: "100%", padding: "7px 0", background: "transparent",
-              border: `1px solid ${GOLD}`, borderRadius: 4,
-              color: GOLD, fontSize: 12, fontFamily: "monospace", cursor: "pointer",
+              width: "100%", padding: "8px 0",
+              background: "var(--ev-gold)", border: "none", borderRadius: 6,
+              color: "#080500", fontSize: 12, fontWeight: 600, fontFamily: "monospace", cursor: "pointer",
             }}>Place Bet</button>
           )}
         </div>
