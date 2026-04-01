@@ -1,0 +1,46 @@
+import { NextRequest, NextResponse } from "next/server"
+import { createSupabaseServerClient } from "@/lib/supabase"
+import { generateBracket, type Entrant } from "@/lib/bracket"
+
+interface EveSession {
+  character_id: number
+  expires_at: number
+}
+
+function getAdmin(request: NextRequest): boolean {
+  const raw = request.cookies.get("eve_session")?.value
+  if (!raw) return false
+  try {
+    const session = JSON.parse(raw) as EveSession
+    if (Date.now() > session.expires_at) return false
+    const ids = (process.env.ADMIN_CHARACTER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean)
+    return ids.includes(String(session.character_id))
+  } catch { return false }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!getAdmin(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+  const { id } = await params
+  const supabase = createSupabaseServerClient()
+
+  const { data: entrants, error } = await supabase
+    .from("entrants")
+    .select("*")
+    .eq("tournament_id", id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!entrants || entrants.length < 4) {
+    return NextResponse.json({ error: "At least 4 entrants required to generate bracket" }, { status: 400 })
+  }
+
+  try {
+    await generateBracket(id, entrants as Entrant[])
+    return NextResponse.json({ success: true })
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Unknown error" }, { status: 500 })
+  }
+}
