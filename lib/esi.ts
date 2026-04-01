@@ -79,25 +79,20 @@ export async function getCharacterPortrait(
 export async function searchCharacterByName(
   name: string
 ): Promise<CharacterSearchResult | null> {
-  const params = new URLSearchParams({
-    categories: 'character',
-    search: name,
-    strict: 'true',
-  })
-
-  const searchRes = await fetch(`${ESI_BASE}/search/?${params.toString()}`, {
-    headers: { Accept: 'application/json' },
+  // ESI /search/ was removed. Use /universe/ids/ instead.
+  const searchRes = await fetch(`${ESI_BASE}/universe/ids/?datasource=tranquility`, {
+    method: 'POST',
+    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify([name]),
   })
 
   if (!searchRes.ok) return null
 
-  const data: { character?: number[] } = await searchRes.json()
-  const ids = data.character
-  if (!ids || ids.length === 0) return null
+  const data: { characters?: { id: number; name: string }[] } = await searchRes.json()
+  const match = data.characters?.[0]
+  if (!match) return null
 
-  const charId = ids[0]
-  const info = await getCharacterPublicInfo(charId)
-  return { character_id: charId, character_name: info.name }
+  return { character_id: match.id, character_name: match.name }
 }
 
 export async function getKillboardStats(
