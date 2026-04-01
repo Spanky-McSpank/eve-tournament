@@ -29,6 +29,7 @@ export type Bracket = {
   entrant2_id: string | null
   winner_id: string | null
   is_bye: boolean
+  locked: boolean
   killmail_id: number | null
   killmail_url: string | null
   scheduled_time: string | null
@@ -202,7 +203,7 @@ export async function advanceWinner(
     await supabase.from('brackets').update(slotUpdate).eq('id', nextBracket.id)
   }
 
-  await resolveBets(bracketId, winnerId)
+  await resolveMatchBets(bracketId, winnerId)
 
   const { data: roundBrackets } = await supabase
     .from('brackets')
@@ -211,93 +212,290 @@ export async function advanceWinner(
     .eq('round', bracket.round)
 
   const allComplete = roundBrackets?.every((b) => b.winner_id !== null) ?? false
-  if (allComplete && roundBrackets?.length === 1) {
-    await supabase
-      .from('tournaments')
-      .update({ status: 'complete', updated_at: new Date().toISOString() })
-      .eq('id', bracket.tournament_id)
+
+  if (allComplete) {
+    await generateRoundSettlement(
+      bracket.tournament_id as string,
+      bracket.round as number
+    )
+    if (roundBrackets?.length === 1) {
+      await supabase
+        .from('tournaments')
+        .update({ status: 'complete', updated_at: new Date().toISOString() })
+        .eq('id', bracket.tournament_id)
+    }
   }
 }
 
-// ── resolveBets ────────────────────────────────────────────────────────────
+// ── resolveMatchBets ───────────────────────────────────────────────────────
 
-export async function resolveBets(bracketId: string, winnerId: string): Promise<void> {
+export async function resolveMatchBets(bracketId: string, winnerId: string): Promise<void> {
   const supabase = createSupabaseServerClient()
 
-  const { data: bets } = await supabase
-    .from('bets')
-    .select('*')
+  // Fetch pending bet_matches for this bracket
+  const { data: betMatches } = await supabase
+    .from('bet_matches')
+    .select('id, proposal_id, acceptor_character_id, acceptor_name, acceptor_isk_amount')
     .eq('bracket_id', bracketId)
     .eq('outcome', 'pending')
 
-  if (!bets || bets.length === 0) return
+  if (betMatches && betMatches.length > 0) {
+    // Batch-fetch proposals
+    const proposalIds = betMatches.map((bm) => bm.proposal_id as string)
+    const { data: proposals } = await supabase
+      .from('bet_proposals')
+      .select('id, proposer_character_id, proposer_name, predicted_winner_id, isk_amount')
+      .in('id', proposalIds)
 
-  const wonIds = bets.filter((b) => b.predicted_winner_id === winnerId).map((b) => b.id as string)
-  const lostIds = bets.filter((b) => b.predicted_winner_id !== winnerId).map((b) => b.id as string)
+    const proposalMap = new Map(
+      (proposals ?? []).map((p) => [p.id as string, p])
+    )
 
-  if (wonIds.length > 0) await supabase.from('bets').update({ outcome: 'won' }).in('id', wonIds)
-  if (lostIds.length > 0) await supabase.from('bets').update({ outcome: 'lost' }).in('id', lostIds)
+    // Resolve each bet_match
+    for (const bm of betMatches) {
+      const proposal = proposalMap.get(bm.proposal_id as string)
+      if (!proposal) continue
+      const outcome =
+        (proposal.predicted_winner_id as string) === winnerId
+          ? 'proposer_won'
+          : 'acceptor_won'
+      await supabase
+        .from('bet_matches')
+        .update({ outcome, resolved_at: new Date().toISOString() })
+        .eq('id', bm.id)
+    }
 
-  type BettorAccum = {
-    character_name: string
-    total: number
-    won: number
-    lost: number
-    wagered: number
-    isk_won: number
-    isk_lost: number
-  }
-  const bettorMap = new Map<number, BettorAccum>()
+    // Accumulate bettor_records updates
+    type BettorAccum = {
+      character_name: string
+      total: number
+      won: number
+      lost: number
+      wagered: number
+      isk_won: number
+      isk_lost: number
+    }
+    const bettorMap = new Map<number, BettorAccum>()
 
-  for (const bet of bets) {
-    const isWon = bet.predicted_winner_id === winnerId
-    const amount = bet.isk_amount as number
-    const cid = bet.bettor_character_id as number
-    const existing = bettorMap.get(cid)
-    if (existing) {
-      existing.total += 1
-      existing.wagered += amount
-      if (isWon) { existing.won += 1; existing.isk_won += amount }
-      else { existing.lost += 1; existing.isk_lost += amount }
-    } else {
-      bettorMap.set(cid, {
-        character_name: bet.bettor_name as string,
-        total: 1,
-        won: isWon ? 1 : 0,
-        lost: isWon ? 0 : 1,
-        wagered: amount,
-        isk_won: isWon ? amount : 0,
-        isk_lost: isWon ? 0 : amount,
-      })
+    function accum(
+      charId: number,
+      charName: string,
+      won: boolean,
+      wagered: number,
+      winAmount: number
+    ) {
+      const ex = bettorMap.get(charId)
+      if (ex) {
+        ex.total += 1
+        ex.wagered += wagered
+        if (won) { ex.won += 1; ex.isk_won += winAmount }
+        else { ex.lost += 1; ex.isk_lost += wagered }
+      } else {
+        bettorMap.set(charId, {
+          character_name: charName,
+          total: 1,
+          won: won ? 1 : 0,
+          lost: won ? 0 : 1,
+          wagered,
+          isk_won: won ? winAmount : 0,
+          isk_lost: won ? 0 : wagered,
+        })
+      }
+    }
+
+    for (const bm of betMatches) {
+      const proposal = proposalMap.get(bm.proposal_id as string)
+      if (!proposal) continue
+      const proposerWon = (proposal.predicted_winner_id as string) === winnerId
+      const proposerStake = proposal.isk_amount as number
+      const acceptorStake = bm.acceptor_isk_amount as number
+      accum(
+        proposal.proposer_character_id as number,
+        proposal.proposer_name as string,
+        proposerWon,
+        proposerStake,
+        acceptorStake
+      )
+      accum(
+        bm.acceptor_character_id as number,
+        bm.acceptor_name as string,
+        !proposerWon,
+        acceptorStake,
+        proposerStake
+      )
+    }
+
+    const characterIds = [...bettorMap.keys()]
+    const { data: existingRecords } = await supabase
+      .from('bettor_records')
+      .select('*')
+      .in('character_id', characterIds)
+
+    const existingMap = new Map(
+      (existingRecords ?? []).map((r) => [r.character_id as number, r])
+    )
+
+    const upserts = [...bettorMap.entries()].map(([characterId, stats]) => {
+      const ex = existingMap.get(characterId)
+      return {
+        character_id: characterId,
+        character_name: stats.character_name,
+        total_bets: ((ex?.total_bets as number) ?? 0) + stats.total,
+        bets_won: ((ex?.bets_won as number) ?? 0) + stats.won,
+        bets_lost: ((ex?.bets_lost as number) ?? 0) + stats.lost,
+        total_isk_wagered: ((ex?.total_isk_wagered as number) ?? 0) + stats.wagered,
+        total_isk_won: ((ex?.total_isk_won as number) ?? 0) + stats.isk_won,
+        total_isk_lost: ((ex?.total_isk_lost as number) ?? 0) + stats.isk_lost,
+        updated_at: new Date().toISOString(),
+      }
+    })
+
+    if (upserts.length > 0) {
+      await supabase
+        .from('bettor_records')
+        .upsert(upserts, { onConflict: 'character_id' })
     }
   }
 
-  const characterIds = [...bettorMap.keys()]
-  const { data: existingRecords } = await supabase
-    .from('bettor_records')
-    .select('*')
-    .in('character_id', characterIds)
+  // Void open proposals that never got matched
+  await supabase
+    .from('bet_proposals')
+    .update({ status: 'void', void_reason: 'Match concluded with no taker' })
+    .eq('bracket_id', bracketId)
+    .eq('status', 'open')
+}
 
-  const existingMap = new Map(
-    (existingRecords ?? []).map((r) => [r.character_id as number, r])
+// ── generateRoundSettlement ────────────────────────────────────────────────
+
+export async function generateRoundSettlement(
+  tournamentId: string,
+  round: number
+): Promise<void> {
+  const supabase = createSupabaseServerClient()
+
+  // Idempotency: skip if already generated
+  const { data: existing } = await supabase
+    .from('settlements')
+    .select('id')
+    .eq('tournament_id', tournamentId)
+    .eq('round', round)
+    .limit(1)
+
+  if (existing && existing.length > 0) return
+
+  // Get bracket IDs for this round
+  const { data: brackets } = await supabase
+    .from('brackets')
+    .select('id')
+    .eq('tournament_id', tournamentId)
+    .eq('round', round)
+
+  const bracketIds = (brackets ?? []).map((b) => b.id as string)
+  if (bracketIds.length === 0) return
+
+  // Get resolved bet_matches for these brackets
+  const { data: betMatches } = await supabase
+    .from('bet_matches')
+    .select('id, proposal_id, acceptor_character_id, acceptor_name, acceptor_isk_amount, outcome')
+    .in('bracket_id', bracketIds)
+    .in('outcome', ['proposer_won', 'acceptor_won'])
+
+  if (!betMatches || betMatches.length === 0) return
+
+  const proposalIds = betMatches.map((bm) => bm.proposal_id as string)
+  const { data: proposals } = await supabase
+    .from('bet_proposals')
+    .select('id, proposer_character_id, proposer_name, isk_amount')
+    .in('id', proposalIds)
+
+  const proposalMap = new Map(
+    (proposals ?? []).map((p) => [p.id as string, p])
   )
 
-  const upserts = [...bettorMap.entries()].map(([characterId, stats]) => {
-    const ex = existingMap.get(characterId)
-    return {
-      character_id: characterId,
-      character_name: stats.character_name,
-      total_bets: ((ex?.total_bets as number) ?? 0) + stats.total,
-      bets_won: ((ex?.bets_won as number) ?? 0) + stats.won,
-      bets_lost: ((ex?.bets_lost as number) ?? 0) + stats.lost,
-      total_isk_wagered: ((ex?.total_isk_wagered as number) ?? 0) + stats.wagered,
-      total_isk_won: ((ex?.total_isk_won as number) ?? 0) + stats.isk_won,
-      total_isk_lost: ((ex?.total_isk_lost as number) ?? 0) + stats.isk_lost,
-      updated_at: new Date().toISOString(),
-    }
-  })
+  // Build gross debt ledger
+  type Debt = {
+    fromId: number
+    fromName: string
+    toId: number
+    toName: string
+    amount: number
+  }
+  const debtMap = new Map<string, Debt>()
 
-  await supabase.from('bettor_records').upsert(upserts, { onConflict: 'character_id' })
+  function addDebt(
+    fromId: number,
+    fromName: string,
+    toId: number,
+    toName: string,
+    amount: number
+  ) {
+    const key = `${fromId}_${toId}`
+    const ex = debtMap.get(key)
+    if (ex) {
+      ex.amount += amount
+    } else {
+      debtMap.set(key, { fromId, fromName, toId, toName, amount })
+    }
+  }
+
+  for (const bm of betMatches) {
+    const proposal = proposalMap.get(bm.proposal_id as string)
+    if (!proposal) continue
+    if (bm.outcome === 'proposer_won') {
+      addDebt(
+        bm.acceptor_character_id as number,
+        bm.acceptor_name as string,
+        proposal.proposer_character_id as number,
+        proposal.proposer_name as string,
+        bm.acceptor_isk_amount as number
+      )
+    } else {
+      addDebt(
+        proposal.proposer_character_id as number,
+        proposal.proposer_name as string,
+        bm.acceptor_character_id as number,
+        bm.acceptor_name as string,
+        proposal.isk_amount as number
+      )
+    }
+  }
+
+  // Net out bilateral debts
+  const processed = new Set<string>()
+  const netDebts: Debt[] = []
+
+  for (const [key, debt] of debtMap.entries()) {
+    if (processed.has(key)) continue
+    const reverseKey = `${debt.toId}_${debt.fromId}`
+    processed.add(key)
+    processed.add(reverseKey)
+
+    const reverse = debtMap.get(reverseKey)
+    if (reverse) {
+      const net = debt.amount - reverse.amount
+      if (net > 0) {
+        netDebts.push({ fromId: debt.fromId, fromName: debt.fromName, toId: debt.toId, toName: debt.toName, amount: net })
+      } else if (net < 0) {
+        netDebts.push({ fromId: reverse.fromId, fromName: reverse.fromName, toId: reverse.toId, toName: reverse.toName, amount: -net })
+      }
+    } else {
+      netDebts.push(debt)
+    }
+  }
+
+  if (netDebts.length === 0) return
+
+  await supabase.from('settlements').insert(
+    netDebts.map((d) => ({
+      tournament_id: tournamentId,
+      round,
+      from_character_id: d.fromId,
+      from_character_name: d.fromName,
+      to_character_id: d.toId,
+      to_character_name: d.toName,
+      isk_amount: d.amount,
+    }))
+  )
 }
 
 // ── getTournamentBracket ───────────────────────────────────────────────────
@@ -338,6 +536,7 @@ export async function getTournamentBracket(
       round: bracket.round as number,
       match_number: bracket.match_number as number,
       is_bye: bracket.is_bye as boolean,
+      locked: (bracket.locked as boolean) ?? false,
       killmail_id: bracket.killmail_id as number | null,
       killmail_url: bracket.killmail_url as string | null,
       scheduled_time: bracket.scheduled_time as string | null,

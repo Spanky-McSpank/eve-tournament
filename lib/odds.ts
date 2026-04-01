@@ -88,3 +88,13 @@ export function calculateOdds(
     },
   }
 }
+
+// ── calculateAcceptorStake ─────────────────────────────────────────────────
+// Given the proposer's implied probability p for their chosen fighter,
+// the acceptor's required stake is: iskAmount * (p / (1 - p))
+// This ensures a fair, odds-adjusted matched bet on both sides.
+export function calculateAcceptorStake(iskAmount: number, impliedProb: number): number {
+  if (impliedProb <= 0 || impliedProb >= 1) return iskAmount
+  const ratio = impliedProb / (1 - impliedProb)
+  return Math.round(iskAmount * ratio)
+}
