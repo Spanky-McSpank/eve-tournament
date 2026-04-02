@@ -44,7 +44,7 @@ function OddsPill({
         display: "inline-block",
         background: C.steel, border: `0.5px solid ${C.border2}`,
         borderRadius: 20, padding: "2px 8px",
-        fontSize: 10, fontFamily: "monospace", color: C.muted,
+        fontSize: "var(--font-sm)", fontFamily: "monospace", color: C.muted,
       }}>No Data</span>
     )
   }
@@ -54,7 +54,7 @@ function OddsPill({
       display: "inline-block",
       background: C.steel, border: `0.5px solid ${C.border2}`,
       borderRadius: 20, padding: "3px 10px",
-      fontSize: 10, fontFamily: "monospace",
+      fontSize: "var(--font-sm)", fontFamily: "monospace",
       color: isFavorite ? C.champagne : C.muted,
     }}>
       {oddsPercent}% · {oddsFractional}
@@ -105,10 +105,10 @@ function FighterPanel({
       opacity: isLoser ? 0.38 : 1,
       transition: "opacity 0.3s",
     }}>
-      <div style={{ flexShrink: 0, borderRadius: "50%", overflow: "hidden", width: 48, height: 48 }}>
+      <div style={{ flexShrink: 0, borderRadius: "50%", overflow: "hidden", width: "clamp(48px,4vw,72px)", height: "clamp(48px,4vw,72px)" }}>
         {entrant.portrait_url
-          ? <Image src={entrant.portrait_url} alt={entrant.character_name} width={48} height={48}
-              style={{ borderRadius: "50%", objectFit: "cover" }} />
+          ? <Image src={entrant.portrait_url} alt={entrant.character_name} width={72} height={72}
+              style={{ borderRadius: "50%", objectFit: "cover", width: "100%", height: "100%" }} />
           : <CapsuleerSilhouette size={48} />
         }
       </div>
@@ -116,13 +116,13 @@ function FighterPanel({
         <div style={{
           color: isWinner ? C.champagne : C.text,
           fontWeight: isWinner ? 600 : 400,
-          fontSize: 13,
+          fontSize: "var(--font-base)",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
           {entrant.character_name}
         </div>
         {entrant.corporation_name && (
-          <div style={{ color: C.muted, fontSize: 10, marginTop: 1 }}>
+          <div style={{ color: C.muted, fontSize: "var(--font-sm)", marginTop: 1 }}>
             {entrant.corporation_name}
           </div>
         )}
@@ -162,9 +162,9 @@ export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCard
       <div style={{
         background: C.card,
         border: `0.5px solid ${C.border2}`,
-        borderRadius: 10,
+        borderRadius: "var(--border-radius)",
         overflow: "hidden",
-        width: 320,
+        width: "clamp(280px, 22vw, 380px)",
       }}>
         {/* Status pill */}
         <div style={{
@@ -228,16 +228,18 @@ export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCard
           }}>
             {match.killmail_url && (
               <a href={match.killmail_url} target="_blank" rel="noopener noreferrer" style={{
-                fontSize: 11, color: C.champagne, textDecoration: "none",
-                padding: "3px 10px", border: `0.5px solid ${C.border2}`,
-                borderRadius: 6, fontFamily: "monospace",
+                fontSize: "var(--font-sm)", color: C.champagne, textDecoration: "none",
+                padding: "4px 12px", border: `0.5px solid ${C.border2}`,
+                borderRadius: "var(--border-radius)", fontFamily: "monospace",
+                minHeight: "var(--btn-height-sm)", display: "inline-flex", alignItems: "center",
               }}>⚔ View Kill</a>
             )}
             {canEnterResult && (
               <button onClick={() => setShowModal(true)} style={{
-                fontSize: 11, color: C.gold, background: "transparent",
-                padding: "3px 10px", border: `1px solid ${C.gold}`,
-                borderRadius: 6, cursor: "pointer", fontFamily: "monospace",
+                fontSize: "var(--font-sm)", color: C.gold, background: "transparent",
+                padding: "4px 12px", border: `1px solid ${C.gold}`,
+                borderRadius: "var(--border-radius)", cursor: "pointer", fontFamily: "monospace",
+                minHeight: "var(--btn-height-sm)",
               }}>Enter Result</button>
             )}
           </div>

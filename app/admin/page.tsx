@@ -27,7 +27,7 @@ export default async function AdminPage() {
   const supabase = createSupabaseServerClient()
   const { data: tournaments } = await supabase
     .from("tournaments")
-    .select("id, name, status, entrant_count, created_at")
+    .select("id, name, status, entrant_count, created_at, paused, announcement")
     .order("created_at", { ascending: false })
 
   const tournamentList = tournaments ?? []

@@ -102,7 +102,7 @@ export default async function TournamentPage({
           ← All Tournaments
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 12, flexWrap: "wrap" }}>
-          <h1 style={{ color: GOLD, fontSize: 26, fontFamily: "monospace", fontWeight: 700, margin: 0 }}>
+          <h1 style={{ color: GOLD, fontSize: "var(--font-2xl)", fontFamily: "monospace", fontWeight: 700, margin: 0 }}>
             {t.name}
           </h1>
           <span style={{
@@ -127,22 +127,22 @@ export default async function TournamentPage({
             background: "rgba(240,192,64,0.04)", borderRadius: 10,
             display: "flex", alignItems: "center", gap: 24,
           }}>
-            <div style={{ borderRadius: "50%", overflow: "hidden", width: 128, height: 128, flexShrink: 0 }}>
+            <div style={{ borderRadius: "50%", overflow: "hidden", width: "clamp(96px,8vw,160px)", height: "clamp(96px,8vw,160px)", flexShrink: 0 }}>
               {champion.portrait_url
-                ? <Image src={champion.portrait_url} alt={champion.character_name} width={128} height={128}
-                    style={{ borderRadius: "50%", objectFit: "cover" }} />
+                ? <Image src={champion.portrait_url} alt={champion.character_name} width={160} height={160}
+                    style={{ borderRadius: "50%", objectFit: "cover", width: "100%", height: "100%" }} />
                 : <CapsuleerIcon size={128} />
               }
             </div>
             <div>
-              <div style={{ color: GOLD, fontSize: 11, fontFamily: "monospace", letterSpacing: 2, marginBottom: 4 }}>
+              <div style={{ color: GOLD, fontSize: "var(--font-sm)", fontFamily: "monospace", letterSpacing: 2, marginBottom: 4 }}>
                 🏆 CHAMPION
               </div>
-              <div style={{ color: GOLD, fontSize: 28, fontWeight: 700 }}>{champion.character_name}</div>
+              <div style={{ color: GOLD, fontSize: "var(--font-2xl)", fontWeight: 700 }}>{champion.character_name}</div>
               {champion.corporation_name && (
-                <div style={{ color: "var(--ev-muted)", fontSize: 13, marginTop: 4 }}>{champion.corporation_name}</div>
+                <div style={{ color: "var(--ev-muted)", fontSize: "var(--font-base)", marginTop: 4 }}>{champion.corporation_name}</div>
               )}
-              <div style={{ marginTop: 8, fontFamily: "monospace", fontSize: 12, color: "var(--ev-muted)" }}>
+              <div style={{ marginTop: 8, fontFamily: "monospace", fontSize: "var(--font-sm)", color: "var(--ev-muted)" }}>
                 {Math.round(champion.efficiency * 100)}% efficiency · {champion.kills_30d}K / {champion.losses_30d}L
               </div>
             </div>
@@ -166,9 +166,10 @@ export default async function TournamentPage({
               </div>
             </div>
             <Link href={`/tournament/${id}/register`} style={{
-              display: "inline-block", padding: "12px 32px", marginBottom: 32,
-              background: GOLD, borderRadius: 10, color: "var(--ev-bg)",
-              fontSize: 14, fontWeight: 700, fontFamily: "monospace", textDecoration: "none",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              padding: "0 32px", marginBottom: 32, minHeight: "var(--btn-height)", minWidth: 200,
+              background: GOLD, borderRadius: "var(--border-radius)", color: "var(--ev-bg)",
+              fontSize: "var(--font-lg)", fontWeight: 700, fontFamily: "monospace", textDecoration: "none",
             }}>Register Now</Link>
           </>
         )}
@@ -178,14 +179,16 @@ export default async function TournamentPage({
           <div style={{ display: "flex", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
             <Link href={`/tournament/${id}/bracket`} style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "12px 28px", background: GOLD, borderRadius: 10,
-              color: "var(--ev-bg)", fontSize: 14, fontWeight: 700, fontFamily: "monospace", textDecoration: "none",
+              padding: "0 28px", minHeight: "var(--btn-height)", minWidth: 200,
+              background: GOLD, borderRadius: "var(--border-radius)",
+              color: "var(--ev-bg)", fontSize: "var(--font-lg)", fontWeight: 700, fontFamily: "monospace", textDecoration: "none",
             }}>⚔ View Bracket</Link>
             <Link href={`/tournament/${id}/bets`} style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "12px 28px", background: "transparent",
-              border: `1px solid ${GOLD}`, borderRadius: 10,
-              color: GOLD, fontSize: 14, fontWeight: 700, fontFamily: "monospace", textDecoration: "none",
+              padding: "0 28px", minHeight: "var(--btn-height)", minWidth: 200,
+              background: "transparent",
+              border: `1px solid ${GOLD}`, borderRadius: "var(--border-radius)",
+              color: GOLD, fontSize: "var(--font-lg)", fontWeight: 700, fontFamily: "monospace", textDecoration: "none",
             }}>🎲 Bookie Board</Link>
           </div>
         )}
@@ -199,10 +202,10 @@ export default async function TournamentPage({
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
               {entrantList.map((e) => (
                 <div key={e.id} style={{ position: "relative" }} title={e.character_name}>
-                  <div style={{ borderRadius: "50%", overflow: "hidden", width: 48, height: 48 }}>
+                  <div style={{ borderRadius: "50%", overflow: "hidden", width: "clamp(48px,4vw,80px)", height: "clamp(48px,4vw,80px)" }}>
                     {e.portrait_url
-                      ? <Image src={e.portrait_url} alt={e.character_name} width={48} height={48}
-                          style={{ borderRadius: "50%", objectFit: "cover" }} />
+                      ? <Image src={e.portrait_url} alt={e.character_name} width={80} height={80}
+                          style={{ borderRadius: "50%", objectFit: "cover", width: "100%", height: "100%" }} />
                       : <CapsuleerIcon size={48} />
                     }
                   </div>

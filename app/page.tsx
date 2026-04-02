@@ -44,7 +44,7 @@ export default function HomePage() {
         padding: "14px 32px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <div style={{ fontSize: 15, fontFamily: "monospace", letterSpacing: 3, fontWeight: 700 }}>
+        <div style={{ fontSize: "var(--font-lg)", fontFamily: "monospace", letterSpacing: 3, fontWeight: 700 }}>
           <span style={{ color: "var(--ev-text)" }}>EVE </span>
           <span style={{ color: "var(--ev-champagne)" }}>TOURNAMENT</span>
         </div>
@@ -55,13 +55,13 @@ export default function HomePage() {
       <div style={{ textAlign: "center", padding: "72px 32px 52px" }}>
         <h1 style={{
           color: "var(--ev-champagne)",
-          fontSize: 48, fontFamily: "monospace", fontWeight: 700,
+          fontSize: "var(--font-3xl)", fontFamily: "monospace", fontWeight: 700,
           margin: 0, letterSpacing: 3, lineHeight: 1.1,
         }}>
           EVE TOURNAMENT
         </h1>
         <p style={{
-          color: "var(--ev-muted)", fontSize: 13,
+          color: "var(--ev-muted)", fontSize: "var(--font-xl)",
           fontFamily: "monospace", marginTop: 14, letterSpacing: 2,
         }}>
           1v1 Championship · Bookie Board · Live Brackets
@@ -83,14 +83,14 @@ export default function HomePage() {
             {tournaments.map((t) => {
               const badge = STATUS_BADGE[t.status] ?? STATUS_BADGE.registration
               return (
-                <div key={t.id} className="ev-card" style={{ padding: 22 }}>
+                <div key={t.id} className="ev-card" style={{ padding: "var(--card-padding)" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
-                    <div style={{ color: "var(--ev-text)", fontSize: 15, fontWeight: 500, lineHeight: 1.3, flex: 1 }}>
+                    <div style={{ color: "var(--ev-text)", fontSize: "var(--font-base)", fontWeight: 500, lineHeight: 1.3, flex: 1 }}>
                       {t.name}
                     </div>
                     <span style={{
                       flexShrink: 0, marginLeft: 10,
-                      fontSize: 9, fontFamily: "monospace", letterSpacing: 1,
+                      fontSize: "var(--font-sm)", fontFamily: "monospace", letterSpacing: 1,
                       padding: "3px 9px",
                       background: badge.bg,
                       border: `1px solid ${badge.border}`,
@@ -98,25 +98,29 @@ export default function HomePage() {
                     }}>{badge.label}</span>
                   </div>
                   <div style={{
-                    color: "var(--ev-champagne)", fontSize: 11,
+                    color: "var(--ev-champagne)", fontSize: "var(--font-sm)",
                     fontFamily: "monospace", marginBottom: 18,
                   }}>
                     {t.currentEntrants} / {t.entrant_count} pilots
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <Link href={"/tournament/" + t.id} style={{
-                      flex: 1, textAlign: "center", padding: "8px 0",
-                      background: "var(--ev-gold)", borderRadius: 6,
-                      color: "#080500", fontSize: 12, fontWeight: 700,
+                      flex: 1, textAlign: "center",
+                      padding: "0", minHeight: "var(--btn-height)",
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      background: "var(--ev-gold)", borderRadius: "var(--border-radius)",
+                      color: "#080500", fontSize: "var(--font-base)", fontWeight: 700,
                       fontFamily: "monospace", textDecoration: "none",
                     }}>View Tournament</Link>
                     {t.status === "registration" && (
                       <Link href={"/tournament/" + t.id + "/register"} style={{
-                        flex: 1, textAlign: "center", padding: "8px 0",
+                        flex: 1, textAlign: "center",
+                        padding: "0", minHeight: "var(--btn-height)",
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
                         background: "transparent",
                         border: "1px solid var(--ev-gold)",
-                        borderRadius: 6,
-                        color: "var(--ev-gold)", fontSize: 12, fontWeight: 700,
+                        borderRadius: "var(--border-radius)",
+                        color: "var(--ev-gold)", fontSize: "var(--font-base)", fontWeight: 700,
                         fontFamily: "monospace", textDecoration: "none",
                       }}>Register</Link>
                     )}

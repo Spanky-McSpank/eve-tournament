@@ -100,7 +100,7 @@ export default function BracketView({ initialBrackets, tournamentId, isAdmin }: 
           alignItems: "stretch",
           height: containerHeight,
           padding: "0 24px",
-          gap: 0,
+          gap: "clamp(32px, 4vw, 80px)",
           minWidth: "max-content",
         }}>
           {roundGroups.map((roundMatches, idx) => (

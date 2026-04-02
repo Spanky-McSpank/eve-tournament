@@ -34,7 +34,7 @@ export default function BracketColumn({
       {/* Column header */}
       <div style={{
         height: 36, display: "flex", alignItems: "center",
-        color: "rgba(240,192,64,0.7)", fontSize: 10,
+        color: "rgba(240,192,64,0.7)", fontSize: "var(--font-lg)",
         fontFamily: "monospace", letterSpacing: 2, textTransform: "uppercase",
         marginBottom: 8,
       }}>

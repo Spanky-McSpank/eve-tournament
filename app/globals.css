@@ -132,19 +132,39 @@
   --ev-live: #22C55E;
   --ev-danger: #EF4444;
   --ev-steel: #1E2D45;
+
+  /* ── Responsive sizing ── */
+  --font-base: clamp(14px, 1.1vw, 18px);
+  --font-sm:   clamp(12px, 0.9vw, 15px);
+  --font-lg:   clamp(16px, 1.3vw, 22px);
+  --font-xl:   clamp(20px, 1.8vw, 30px);
+  --font-2xl:  clamp(24px, 2.2vw, 40px);
+  --font-3xl:  clamp(32px, 3.5vw, 64px);
+
+  --spacing-sm: clamp(8px, 0.8vw, 14px);
+  --spacing-md: clamp(12px, 1.2vw, 20px);
+  --spacing-lg: clamp(16px, 1.8vw, 28px);
+  --spacing-xl: clamp(24px, 2.5vw, 40px);
+
+  --btn-height:    clamp(40px, 3.5vw, 56px);
+  --btn-height-sm: clamp(32px, 2.5vw, 44px);
+  --card-padding:  clamp(16px, 2vw, 32px);
+  --border-radius: clamp(6px, 0.6vw, 10px);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans;
+    font-size: var(--font-base);
+  }
   body {
     background-color: var(--ev-bg);
     color: var(--ev-text);
     font-family: system-ui, -apple-system, sans-serif;
-  }
-  html {
-    @apply font-sans;
+    font-size: var(--font-base);
   }
   .ev-mono {
     font-family: ui-monospace, "Geist Mono", monospace;
@@ -162,14 +182,17 @@
   .ev-card {
     background: var(--ev-card);
     border: 0.5px solid var(--ev-border2);
-    border-radius: 10px;
+    border-radius: var(--border-radius);
   }
   .ev-btn-primary {
     background: var(--ev-gold);
     color: #080500;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--border-radius);
     font-weight: 600;
+    font-size: var(--font-base);
+    min-height: var(--btn-height);
+    padding: 0 var(--spacing-lg);
     cursor: pointer;
   }
   .ev-btn-primary:disabled {
@@ -181,14 +204,30 @@
     background: transparent;
     color: var(--ev-gold);
     border: 1px solid var(--ev-gold);
-    border-radius: 6px;
+    border-radius: var(--border-radius);
+    font-size: var(--font-base);
+    min-height: var(--btn-height);
+    padding: 0 var(--spacing-lg);
     cursor: pointer;
   }
   .ev-btn-ghost {
     background: transparent;
     color: var(--ev-muted);
     border: 1px solid var(--ev-border);
-    border-radius: 6px;
+    border-radius: var(--border-radius);
+    font-size: var(--font-base);
+    min-height: var(--btn-height-sm);
+    padding: 0 var(--spacing-md);
     cursor: pointer;
+  }
+  .ev-btn-sm {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--border-radius);
+    font-size: var(--font-sm);
+    min-height: var(--btn-height-sm);
+    padding: 0 var(--spacing-sm);
+    cursor: pointer;
+    color: var(--ev-muted);
   }
 }
