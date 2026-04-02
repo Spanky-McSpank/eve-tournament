@@ -25,6 +25,7 @@ interface MatchRow {
 
 interface EditBetModalProps {
   proposal: Proposal | null
+  defaultTab?: "edit" | "void"
   onClose: () => void
   onSaved: () => void
 }
@@ -35,8 +36,8 @@ interface ForceSettleModalProps {
   onSaved: () => void
 }
 
-export function EditBetModal({ proposal, onClose, onSaved }: EditBetModalProps) {
-  const [tab, setTab] = useState<"edit" | "void">("edit")
+export function EditBetModal({ proposal, defaultTab = "edit", onClose, onSaved }: EditBetModalProps) {
+  const [tab, setTab] = useState<"edit" | "void">(defaultTab)
   const [iskAmount, setIskAmount] = useState(String(proposal?.isk_amount ?? ""))
   const [voidReason, setVoidReason] = useState("")
   const [loading, setLoading] = useState(false)
