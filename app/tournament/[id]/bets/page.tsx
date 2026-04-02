@@ -128,6 +128,13 @@ export default function BetsPage({ params }: { params: Promise<{ id: string }> }
         </h1>
         <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
           {me.isAdmin && <AdminBackButton />}
+          {me.isAdmin && (
+            <Link href={`/admin/tournament/${id}/bets`} style={{
+              fontSize: 12, color: "#f59e0b", textDecoration: "none",
+              padding: "5px 12px", border: "1px solid rgba(245,158,11,0.3)",
+              borderRadius: 4, fontFamily: "monospace",
+            }}>⚙ Manage Bets</Link>
+          )}
           <Link href={`/tournament/${id}/bracket`} style={{
             fontSize: 12, color: "var(--ev-text)", textDecoration: "none",
             padding: "5px 12px", border: "1px solid rgba(255,255,255,0.12)",

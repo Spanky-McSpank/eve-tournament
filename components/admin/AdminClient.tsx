@@ -909,6 +909,9 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
                           <button onClick={() => setMgmtTid(t.id)} style={{ fontSize: 11, fontFamily: "monospace", padding: "3px 10px", background: mgmtTid === t.id ? "rgba(240,192,64,0.1)" : "transparent", border: `1px solid ${mgmtTid === t.id ? GOLD : "rgba(255,255,255,0.08)"}`, borderRadius: 3, color: mgmtTid === t.id ? GOLD : "var(--ev-muted)", cursor: "pointer" }}>
                             Manage
                           </button>
+                          {(t.status === "active" || t.status === "complete") && (
+                            <Link href={`/admin/tournament/${t.id}/bets`} style={{ fontSize: 11, color: "#f59e0b", textDecoration: "none", padding: "3px 10px", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 3, fontFamily: "monospace" }}>💰 Bets</Link>
+                          )}
                         </div>
                       </td>
                     </tr>
