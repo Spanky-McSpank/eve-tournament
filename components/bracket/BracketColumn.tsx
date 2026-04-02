@@ -30,7 +30,12 @@ export default function BracketColumn({
   const label = getRoundLabel(round, totalRounds)
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center",
+      flexShrink: 0,
+      width: "clamp(320px, 24vw, 440px)",
+      overflow: "visible",
+    }}>
       {/* Column header */}
       <div style={{
         height: 36, display: "flex", alignItems: "center",
@@ -50,7 +55,7 @@ export default function BracketColumn({
           <div
             key={match.id}
             className={flashedIds.has(match.id) ? "eve-flash" : undefined}
-            style={{ padding: "4px 0" }}
+            style={{ padding: "4px 0", width: "100%" }}
           >
             <MatchCard match={match} isAdmin={isAdmin} onResultEntered={onResultEntered} />
           </div>

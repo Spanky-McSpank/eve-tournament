@@ -19,6 +19,8 @@ const C = {
   danger: "var(--ev-danger)",
 } as const
 
+const PORTRAIT_SIZE = "clamp(40px, 3.2vw, 56px)"
+
 function CapsuleerSilhouette({ size }: { size: number }) {
   const r = size / 2
   return (
@@ -45,6 +47,7 @@ function OddsPill({
         background: C.steel, border: `0.5px solid ${C.border2}`,
         borderRadius: 20, padding: "2px 8px",
         fontSize: "var(--font-sm)", fontFamily: "monospace", color: C.muted,
+        whiteSpace: "nowrap",
       }}>No Data</span>
     )
   }
@@ -53,11 +56,12 @@ function OddsPill({
     <span style={{
       display: "inline-block",
       background: C.steel, border: `0.5px solid ${C.border2}`,
-      borderRadius: 20, padding: "3px 10px",
+      borderRadius: 20, padding: "3px 8px",
       fontSize: "var(--font-sm)", fontFamily: "monospace",
       color: isFavorite ? C.champagne : C.muted,
+      whiteSpace: "nowrap",
     }}>
-      {oddsPercent}% · {oddsFractional}
+      {oddsPercent}% • {oddsFractional}
     </span>
   )
 }
@@ -76,8 +80,9 @@ function FighterPanel({
   if (!entrant) {
     return (
       <div style={{
-        flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-        minHeight: 88, padding: "10px 14px",
+        flex: "1 1 0", minWidth: 0, overflow: "hidden",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        minHeight: 80, padding: "10px 12px",
         background: "rgba(30,45,69,0.3)",
         borderRadius: side === "left" ? "9px 0 0 9px" : "0 9px 9px 0",
       }}>
@@ -90,43 +95,72 @@ function FighterPanel({
 
   return (
     <div style={{
-      flex: 1,
+      flex: "1 1 0",
+      minWidth: 0,
+      overflow: "hidden",
       display: "flex",
       flexDirection: side === "right" ? "row-reverse" : "row",
       alignItems: "center",
-      gap: 10,
-      padding: "12px 14px",
+      gap: 8,
+      padding: "10px 12px",
       background: isWinner
         ? "rgba(200,150,12,0.07)"
         : isLoser ? "rgba(0,0,0,0.15)" : "transparent",
       borderRadius: side === "left" ? "9px 0 0 9px" : "0 9px 9px 0",
       borderLeft: isWinner && side === "left" ? `3px solid ${C.gold}` : undefined,
       borderRight: isWinner && side === "right" ? `3px solid ${C.gold}` : undefined,
-      opacity: isLoser ? 0.38 : 1,
+      opacity: isLoser ? 0.4 : 1,
       transition: "opacity 0.3s",
     }}>
-      <div style={{ flexShrink: 0, borderRadius: "50%", overflow: "hidden", width: "clamp(48px,4vw,72px)", height: "clamp(48px,4vw,72px)" }}>
+      {/* Portrait — never shrinks */}
+      <div style={{
+        flexShrink: 0,
+        borderRadius: "50%",
+        overflow: "hidden",
+        width: PORTRAIT_SIZE,
+        height: PORTRAIT_SIZE,
+      }}>
         {entrant.portrait_url
-          ? <Image src={entrant.portrait_url} alt={entrant.character_name} width={72} height={72}
+          ? <Image src={entrant.portrait_url} alt={entrant.character_name} width={56} height={56}
               style={{ borderRadius: "50%", objectFit: "cover", width: "100%", height: "100%" }} />
-          : <CapsuleerSilhouette size={48} />
+          : <CapsuleerSilhouette size={40} />
         }
       </div>
-      <div style={{ flex: 1, minWidth: 0, textAlign: side === "right" ? "right" : "left" }}>
+
+      {/* Text block — shrinks, clips */}
+      <div style={{
+        flex: "1 1 0",
+        minWidth: 0,
+        overflow: "hidden",
+        textAlign: side === "right" ? "right" : "left",
+      }}>
         <div style={{
+          display: "block",
           color: isWinner ? C.champagne : C.text,
           fontWeight: isWinner ? 600 : 400,
           fontSize: "var(--font-base)",
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          maxWidth: "100%",
         }}>
           {entrant.character_name}
         </div>
         {entrant.corporation_name && (
-          <div style={{ color: C.muted, fontSize: "var(--font-sm)", marginTop: 1 }}>
+          <div style={{
+            display: "block",
+            color: C.muted,
+            fontSize: "var(--font-sm)",
+            marginTop: 1,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            maxWidth: "100%",
+          }}>
             {entrant.corporation_name}
           </div>
         )}
-        <div style={{ marginTop: 5 }}>
+        <div style={{ marginTop: 4 }}>
           <OddsPill
             oddsPercent={oddsPercent}
             oddsFractional={oddsFractional}
@@ -164,7 +198,8 @@ export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCard
         border: `0.5px solid ${C.border2}`,
         borderRadius: "var(--border-radius)",
         overflow: "hidden",
-        width: "clamp(280px, 22vw, 380px)",
+        width: "100%",
+        minWidth: "clamp(320px, 24vw, 440px)",
       }}>
         {/* Status pill */}
         <div style={{
@@ -191,6 +226,7 @@ export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCard
           ) : null}
         </div>
 
+        {/* Fighter row: [panel] [VS] [panel] */}
         <div style={{ display: "flex", alignItems: "stretch" }}>
           <FighterPanel
             entrant={match.entrant1}
@@ -201,9 +237,11 @@ export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCard
             hasData={match.odds?.entrant1.hasData}
             side="left"
           />
+          {/* VS divider — fixed width, never grows/shrinks */}
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "0 8px", flexShrink: 0,
+            flexShrink: 0,
+            width: "clamp(28px, 2.5vw, 40px)",
             background: "rgba(200,150,12,0.04)",
           }}>
             <span style={{ color: C.muted, fontSize: 9, fontFamily: "monospace", letterSpacing: 2, opacity: 0.4 }}>VS</span>
