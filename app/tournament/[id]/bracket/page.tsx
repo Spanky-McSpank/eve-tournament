@@ -5,6 +5,7 @@ import Link from "next/link"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { getTournamentBracket } from "@/lib/bracket"
 import BracketView from "@/components/bracket/BracketView"
+import AdminBackButton from "@/components/admin/AdminBackButton"
 
 interface EveSession {
   character_id: number
@@ -111,7 +112,8 @@ export default async function BracketPage({
         <span style={{ fontSize: 12, color: "var(--ev-muted)", fontFamily: "monospace" }}>
           ⚔ {entrantCount > 0 ? entrantCount : t.entrant_count} Entrants
         </span>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
+          {isAdmin && <AdminBackButton />}
           <Link href={`/tournament/${id}/bets`} style={{
             fontSize: 12, color: "var(--ev-text)", textDecoration: "none",
             padding: "5px 12px", border: "1px solid rgba(255,255,255,0.12)",

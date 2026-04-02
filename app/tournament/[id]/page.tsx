@@ -1,8 +1,11 @@
 import Image from "next/image"
 import Link from "next/link"
+import { cookies } from "next/headers"
 import { notFound } from "next/navigation"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import type { Entrant } from "@/lib/bracket"
+import AdminBackButton from "@/components/admin/AdminBackButton"
+import { isAdminCharacter } from "@/lib/auth"
 
 const GOLD = "var(--ev-gold-light)"
 
@@ -35,6 +38,15 @@ export default async function TournamentPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  const cookieStore = await cookies()
+  let isAdmin = false
+  const rawSession = cookieStore.get("eve_session")?.value
+  if (rawSession) {
+    try {
+      const sess = JSON.parse(rawSession) as { character_id: number; expires_at: number }
+      if (Date.now() <= sess.expires_at) isAdmin = isAdminCharacter(sess.character_id)
+    } catch { /* ignore */ }
+  }
   const supabase = createSupabaseServerClient()
 
   const [{ data: tournament }, { data: entrants }] = await Promise.all([
@@ -98,9 +110,12 @@ export default async function TournamentPage({
     }}>
       {/* Header */}
       <div style={{ padding: "32px 32px 0", maxWidth: 1000, margin: "0 auto" }}>
-        <Link href="/" style={{ color: "#444", fontSize: 11, fontFamily: "monospace", textDecoration: "none" }}>
-          ← All Tournaments
-        </Link>
+        <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+          <Link href="/" style={{ color: "#444", fontSize: 11, fontFamily: "monospace", textDecoration: "none" }}>
+            ← All Tournaments
+          </Link>
+          {isAdmin && <AdminBackButton />}
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 12, flexWrap: "wrap" }}>
           <h1 style={{ color: GOLD, fontSize: "var(--font-2xl)", fontFamily: "monospace", fontWeight: 700, margin: 0 }}>
             {t.name}

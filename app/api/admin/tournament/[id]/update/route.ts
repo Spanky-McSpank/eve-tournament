@@ -4,18 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase"
-
-interface EveSession { character_id: number; expires_at: number }
-
-function getAdmin(request: NextRequest): boolean {
-  const raw = request.cookies.get("eve_session")?.value
-  if (!raw) return false
-  try {
-    const s = JSON.parse(raw) as EveSession
-    if (Date.now() > s.expires_at) return false
-    return (process.env.ADMIN_CHARACTER_IDS ?? "").split(",").map((x) => x.trim()).includes(String(s.character_id))
-  } catch { return false }
-}
+import { isAdminRequest, getSessionCharacter } from "@/lib/auth"
 
 const LEGAL_TRANSITIONS: Record<string, string[]> = {
   active: ["registration", "complete"],
@@ -27,7 +16,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!getAdmin(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  const session = getSessionCharacter(request)
+  console.log("[admin/tournament/update] session:", JSON.stringify(session), "isAdmin:", session?.isAdmin)
+  if (!session?.isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   const { id } = await params
 
   let body: Record<string, unknown>

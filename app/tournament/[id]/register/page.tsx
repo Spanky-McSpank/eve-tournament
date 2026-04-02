@@ -5,6 +5,7 @@ import Link from "next/link"
 import { use, useEffect, useState } from "react"
 import { useEveAuth } from "@/hooks/useEveAuth"
 import EveLoginButton from "@/components/ui/EveLoginButton"
+import AdminBackButton from "@/components/admin/AdminBackButton"
 
 const GOLD = "var(--ev-gold-light)"
 
@@ -46,7 +47,7 @@ function EfficiencyBar({ value }: { value: number }) {
 
 export default function RegisterPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { character, isAuthenticated, isLoading: authLoading } = useEveAuth()
+  const { character, isAuthenticated, isAdmin, isLoading: authLoading } = useEveAuth()
 
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [tournamentLoading, setTournamentLoading] = useState(true)
@@ -97,6 +98,7 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
 
   const pageStyle: React.CSSProperties = {
     minHeight: "100vh",
+    position: "relative",
     background: "var(--ev-bg)",
     backgroundImage: [
       "linear-gradient(rgba(200,150,12,0.03) 1px, transparent 1px)",
@@ -117,10 +119,17 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
     )
   }
 
+  const adminBack = isAdmin ? (
+    <div style={{ position: "absolute", top: 16, left: 16 }}>
+      <AdminBackButton />
+    </div>
+  ) : null
+
   // State A: closed or not found
   if (!tournament || tournament.status !== "registration") {
     return (
       <div style={pageStyle}>
+        {adminBack}
         <div style={{
           background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
           borderRadius: 10, padding: 40, textAlign: "center", maxWidth: 400,
@@ -144,6 +153,7 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
   if (!isAuthenticated) {
     return (
       <div style={pageStyle}>
+        {adminBack}
         <div style={{
           background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
           borderRadius: 10, padding: 40, textAlign: "center", maxWidth: 400,

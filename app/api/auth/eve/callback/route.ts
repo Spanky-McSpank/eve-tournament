@@ -29,7 +29,21 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const state = searchParams.get('state')
 
-  const storedState = request.cookies.get('eve_oauth_state')?.value
+  const storedStateCookie = request.cookies.get('eve_oauth_state')?.value
+  let storedState: string | undefined
+  let returnTo = '/'
+  if (storedStateCookie) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(storedStateCookie)) as { state: string; returnTo?: string }
+      storedState = parsed.state
+      if (parsed.returnTo?.startsWith('/') && !/^\/\/|https?:\/\//i.test(parsed.returnTo)) {
+        returnTo = parsed.returnTo
+      }
+    } catch {
+      // Legacy: plain UUID stored
+      storedState = storedStateCookie
+    }
+  }
 
   if (!state || !storedState || state !== storedState) {
     return NextResponse.json({ error: 'State mismatch' }, { status: 400 })
@@ -88,7 +102,7 @@ export async function GET(request: NextRequest) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const response = NextResponse.redirect(appUrl + '/')
+  const response = NextResponse.redirect(appUrl + returnTo)
 
   response.cookies.set('eve_session', JSON.stringify(session), {
     httpOnly: true,

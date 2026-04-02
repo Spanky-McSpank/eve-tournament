@@ -6,22 +6,7 @@ import {
   getCharacterPortrait,
   getKillboardStats,
 } from "@/lib/esi"
-
-interface EveSession {
-  character_id: number
-  expires_at: number
-}
-
-function getAdmin(request: NextRequest): boolean {
-  const raw = request.cookies.get("eve_session")?.value
-  if (!raw) return false
-  try {
-    const session = JSON.parse(raw) as EveSession
-    if (Date.now() > session.expires_at) return false
-    const ids = (process.env.ADMIN_CHARACTER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean)
-    return ids.includes(String(session.character_id))
-  } catch { return false }
-}
+import { isAdminRequest } from "@/lib/auth"
 
 async function fetchCorpName(corporationId: number): Promise<string | null> {
   try {
@@ -36,7 +21,7 @@ async function fetchCorpName(corporationId: number): Promise<string | null> {
 }
 
 export async function POST(request: NextRequest) {
-  if (!getAdmin(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!isAdminRequest(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   let body: Record<string, unknown>
   try { body = (await request.json()) as Record<string, unknown> }

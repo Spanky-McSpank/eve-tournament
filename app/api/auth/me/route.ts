@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
     .filter(Boolean)
 
   const isAdmin = adminIds.includes(String(session.character_id))
+  const showWelcome = session.character_name === "Wenchy The Destroyer"
 
   return NextResponse.json({
     character: {
@@ -41,5 +42,6 @@ export async function GET(request: NextRequest) {
     },
     isAuthenticated: true,
     isAdmin,
+    showWelcome,
   })
 }

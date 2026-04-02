@@ -1,27 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { calculateOdds, calculateAcceptorStake } from "@/lib/odds"
-
-interface EveSession {
-  character_id: number
-  expires_at: number
-}
+import { isAdminRequest } from "@/lib/auth"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-function getAdmin(request: NextRequest): boolean {
-  const raw = request.cookies.get("eve_session")?.value
-  if (!raw) return false
-  try {
-    const session = JSON.parse(raw) as EveSession
-    if (Date.now() > session.expires_at) return false
-    const ids = (process.env.ADMIN_CHARACTER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean)
-    return ids.includes(String(session.character_id))
-  } catch { return false }
-}
-
 export async function POST(request: NextRequest) {
-  if (!getAdmin(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!isAdminRequest(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   let body: Record<string, unknown>
   try { body = (await request.json()) as Record<string, unknown> }

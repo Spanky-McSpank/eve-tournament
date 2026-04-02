@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { advanceWinner } from "@/lib/bracket"
-
-interface EveSession { character_id: number; expires_at: number }
-
-function getAdmin(request: NextRequest): boolean {
-  const raw = request.cookies.get("eve_session")?.value
-  if (!raw) return false
-  try {
-    const s = JSON.parse(raw) as EveSession
-    if (Date.now() > s.expires_at) return false
-    return (process.env.ADMIN_CHARACTER_IDS ?? "").split(",").map((x) => x.trim()).includes(String(s.character_id))
-  } catch { return false }
-}
+import { isAdminRequest } from "@/lib/auth"
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!getAdmin(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!isAdminRequest(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   const { id: bracketId } = await params
 
   let body: Record<string, unknown>

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEveAuth } from '@/hooks/useEveAuth'
 
 // EVE Online diamond/cross logo SVG
@@ -38,7 +39,7 @@ function Skeleton() {
 }
 
 export default function EveLoginButton() {
-  const { character, isAuthenticated, isLoading, login, logout } = useEveAuth()
+  const { character, isAuthenticated, isAdmin, isLoading, login, logout } = useEveAuth()
 
   if (isLoading) {
     return <Skeleton />
@@ -48,7 +49,31 @@ export default function EveLoginButton() {
     const portraitUrl = `https://images.evetech.net/characters/${character.character_id}/portrait?size=64`
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        {isAdmin && (
+          <Link
+            href="/admin"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              minHeight: "var(--btn-height)",
+              padding: "0 var(--spacing-lg)",
+              fontSize: "var(--font-lg)",
+              fontFamily: "monospace",
+              fontWeight: 700,
+              color: "#080500",
+              background: "linear-gradient(135deg, var(--ev-gold) 0%, var(--ev-gold-light) 100%)",
+              border: "none",
+              borderRadius: "var(--border-radius)",
+              textDecoration: "none",
+              letterSpacing: 1,
+              boxShadow: "0 2px 12px rgba(200,150,12,0.3)",
+            }}
+          >
+            ⚙ Admin
+          </Link>
+        )}
         <img
           src={portraitUrl}
           alt={character.character_name}
@@ -60,7 +85,7 @@ export default function EveLoginButton() {
           {character.character_name}
         </span>
         <button
-          onClick={() => logout()}
+          onClick={() => void logout()}
           className="text-xs text-white/50 hover:text-white/80 transition-colors ml-1"
         >
           Logout
@@ -71,7 +96,7 @@ export default function EveLoginButton() {
 
   return (
     <button
-      onClick={login}
+      onClick={() => login()}
       style={{ backgroundColor: '#000', color: '#fff', border: '1px solid #444' }}
       className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium hover:bg-white/10 transition-colors"
     >

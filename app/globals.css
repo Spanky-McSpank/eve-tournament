@@ -119,14 +119,14 @@
 
 /* ── EVE Design System ───────────────────────────────────────────────────── */
 :root {
-  --ev-bg: #06080F;
-  --ev-card: #0D1420;
-  --ev-card2: #111B2E;
+  --ev-bg: #0f0f0f;
+  --ev-card: rgba(255,255,255,0.055);
+  --ev-card2: #141418;
   --ev-gold: #C8960C;
   --ev-gold-light: #E8B020;
   --ev-champagne: #F0D878;
   --ev-border: #2A2215;
-  --ev-border2: rgba(200, 150, 12, 0.27);
+  --ev-border2: rgba(200, 150, 12, 0.4);
   --ev-text: #D8CFA8;
   --ev-muted: #6B7280;
   --ev-live: #22C55E;
@@ -134,22 +134,22 @@
   --ev-steel: #1E2D45;
 
   /* ── Responsive sizing ── */
-  --font-base: clamp(14px, 1.1vw, 18px);
-  --font-sm:   clamp(12px, 0.9vw, 15px);
-  --font-lg:   clamp(16px, 1.3vw, 22px);
-  --font-xl:   clamp(20px, 1.8vw, 30px);
-  --font-2xl:  clamp(24px, 2.2vw, 40px);
-  --font-3xl:  clamp(32px, 3.5vw, 64px);
+  --font-base: clamp(15px, 1.2vw, 19px);
+  --font-sm:   clamp(13px, 1vw, 16px);
+  --font-lg:   clamp(17px, 1.5vw, 24px);
+  --font-xl:   clamp(22px, 2vw, 32px);
+  --font-2xl:  clamp(28px, 2.8vw, 48px);
+  --font-3xl:  clamp(38px, 4.5vw, 72px);
 
-  --spacing-sm: clamp(8px, 0.8vw, 14px);
-  --spacing-md: clamp(12px, 1.2vw, 20px);
-  --spacing-lg: clamp(16px, 1.8vw, 28px);
-  --spacing-xl: clamp(24px, 2.5vw, 40px);
+  --spacing-sm: clamp(10px, 1vw, 16px);
+  --spacing-md: clamp(14px, 1.5vw, 24px);
+  --spacing-lg: clamp(20px, 2vw, 32px);
+  --spacing-xl: clamp(28px, 3vw, 48px);
 
-  --btn-height:    clamp(40px, 3.5vw, 56px);
-  --btn-height-sm: clamp(32px, 2.5vw, 44px);
-  --card-padding:  clamp(16px, 2vw, 32px);
-  --border-radius: clamp(6px, 0.6vw, 10px);
+  --btn-height:    clamp(44px, 4vw, 64px);
+  --btn-height-sm: clamp(36px, 3vw, 48px);
+  --card-padding:  clamp(20px, 2.2vw, 36px);
+  --border-radius: clamp(8px, 0.8vw, 12px);
 }
 
 @layer base {
@@ -158,10 +158,11 @@
   }
   html {
     @apply font-sans;
-    font-size: var(--font-base);
+    font-size: clamp(15px, 1.2vw, 20px);
   }
   body {
-    background-color: var(--ev-bg);
+    background: linear-gradient(160deg, #0f0f0f 0%, #141418 50%, #111109 100%);
+    background-attachment: fixed;
     color: var(--ev-text);
     font-family: system-ui, -apple-system, sans-serif;
     font-size: var(--font-base);

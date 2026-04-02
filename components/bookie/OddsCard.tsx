@@ -111,7 +111,7 @@ export default function OddsCard({
   const alreadyAccepted = false // tracked via refreshKey after accept
 
   async function handleAccept(proposalId: string, proposerCharId: number) {
-    if (!currentCharacterId) { window.location.href = "/api/auth/eve"; return }
+    if (!currentCharacterId) { window.location.href = `/api/auth/eve?returnTo=${encodeURIComponent(window.location.pathname)}`; return }
     if (currentCharacterId === proposerCharId) return
     setAccepting(proposalId)
     setAcceptError(null)
@@ -224,7 +224,7 @@ export default function OddsCard({
                         {isComplete ? "Closed" : "Your Bet"}
                       </span>
                     ) : !currentCharacterId ? (
-                      <button onClick={() => { window.location.href = "/api/auth/eve" }} style={{
+                      <button onClick={() => { window.location.href = `/api/auth/eve?returnTo=${encodeURIComponent(window.location.pathname)}` }} style={{
                         fontSize: 9, fontFamily: "monospace", padding: "3px 8px", borderRadius: 20,
                         border: `1px solid ${C.border2}`, background: "transparent", color: C.muted, cursor: "pointer",
                       }}>Login</button>
@@ -268,7 +268,7 @@ export default function OddsCard({
               color: "rgba(240,192,64,0.5)", fontSize: 12, fontFamily: "monospace", cursor: "not-allowed",
             }}>Proposal Posted ✓</button>
           ) : !currentCharacterId ? (
-            <button onClick={() => { window.location.href = "/api/auth/eve" }} style={{
+            <button onClick={() => { window.location.href = `/api/auth/eve?returnTo=${encodeURIComponent(window.location.pathname)}` }} style={{
               width: "100%", padding: "8px 0", background: "transparent",
               border: `0.5px solid ${C.border2}`, borderRadius: 6,
               color: C.muted, fontSize: 12, fontFamily: "monospace", cursor: "pointer",
