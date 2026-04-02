@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import WelcomeModalWrapper from "@/components/ui/WelcomeModalWrapper";
+import TermsGateWrapper from "@/components/ui/TermsGateWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,8 +33,10 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
-        <WelcomeModalWrapper />
+        <TermsGateWrapper>
+          {children}
+          <WelcomeModalWrapper />
+        </TermsGateWrapper>
       </body>
     </html>
   );
