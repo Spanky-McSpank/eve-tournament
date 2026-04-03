@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase"
 import { getTournamentBracket } from "@/lib/bracket"
 import BracketView from "@/components/bracket/BracketView"
 import AdminBackButton from "@/components/admin/AdminBackButton"
+import TournamentRulesCard from "@/components/tournament/TournamentRulesCard"
 
 interface EveSession {
   character_id: number
@@ -17,6 +18,14 @@ interface Tournament {
   name: string
   status: "registration" | "active" | "complete"
   entrant_count: number
+  ship_class: string | null
+  ship_restrictions: string | null
+  banned_ships: string | null
+  engagement_rules: string | null
+  system_name: string | null
+  system_id: number | null
+  fitting_restrictions: string | null
+  additional_rules: string | null
 }
 
 export default async function BracketPage({
@@ -49,7 +58,7 @@ export default async function BracketPage({
   const supabase = createSupabaseServerClient()
   const { data: tournament } = await supabase
     .from("tournaments")
-    .select("id, name, status, entrant_count")
+    .select("id, name, status, entrant_count, ship_class, ship_restrictions, banned_ships, engagement_rules, system_name, system_id, fitting_restrictions, additional_rules")
     .eq("id", id)
     .single()
 
@@ -129,6 +138,11 @@ export default async function BracketPage({
             ← Roster
           </Link>
         </div>
+      </div>
+
+      {/* Rules card — collapsible */}
+      <div style={{ padding: "16px 24px 0" }}>
+        <TournamentRulesCard tournament={t} collapsible />
       </div>
 
       {/* Body */}

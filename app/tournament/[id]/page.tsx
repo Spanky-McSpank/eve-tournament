@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase"
 import type { Entrant } from "@/lib/bracket"
 import AdminBackButton from "@/components/admin/AdminBackButton"
 import { isAdminCharacter } from "@/lib/auth"
+import TournamentRulesCard from "@/components/tournament/TournamentRulesCard"
 
 const GOLD = "var(--ev-gold-light)"
 
@@ -30,6 +31,14 @@ interface Tournament {
   name: string
   status: "registration" | "active" | "complete"
   entrant_count: number
+  ship_class: string | null
+  ship_restrictions: string | null
+  banned_ships: string | null
+  engagement_rules: string | null
+  system_name: string | null
+  system_id: number | null
+  fitting_restrictions: string | null
+  additional_rules: string | null
 }
 
 export default async function TournamentPage({
@@ -50,7 +59,7 @@ export default async function TournamentPage({
   const supabase = createSupabaseServerClient()
 
   const [{ data: tournament }, { data: entrants }] = await Promise.all([
-    supabase.from("tournaments").select("id, name, status, entrant_count").eq("id", id).single(),
+    supabase.from("tournaments").select("id, name, status, entrant_count, ship_class, ship_restrictions, banned_ships, engagement_rules, system_name, system_id, fitting_restrictions, additional_rules").eq("id", id).single(),
     supabase.from("entrants").select("*").eq("tournament_id", id)
       .order("seed", { ascending: true, nullsFirst: false })
       .order("registered_at", { ascending: true }),
@@ -225,6 +234,11 @@ export default async function TournamentPage({
               4th Place: {fourthPlace.character_name}
             </div>
           </div>
+        )}
+
+        {/* Rules card — always visible when registration or active */}
+        {(t.status === "registration" || t.status === "active") && (
+          <TournamentRulesCard tournament={t} />
         )}
 
         {/* Registration state */}

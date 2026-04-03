@@ -9,7 +9,7 @@ export async function GET(
   const supabase = createSupabaseServerClient()
   const { data: tournament } = await supabase
     .from("tournaments")
-    .select("id, name, status, entrant_count")
+    .select("id, name, status, entrant_count, ship_class, ship_restrictions, banned_ships, engagement_rules, system_name, system_id, fitting_restrictions, additional_rules")
     .eq("id", id)
     .single()
 

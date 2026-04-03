@@ -10,7 +10,11 @@
       "Bash(mkdir -p \"c:\\\\GitHub_Repos\\\\eve-tournament\\\\eve-tournament\\\\app\\\\api\\\\admin\\\\props\\\\[id]\\\\update\")",
       "Bash(mkdir -p \"c:\\\\GitHub_Repos\\\\eve-tournament\\\\eve-tournament\\\\app\\\\api\\\\admin\\\\props\\\\[id]\\\\resolve\")",
       "Bash(mkdir -p \"c:\\\\GitHub_Repos\\\\eve-tournament\\\\eve-tournament\\\\app\\\\api\\\\admin\\\\props\\\\[id]\\\\void\")",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "Bash(ls /c/GitHub_Repos/eve-tournament/eve-tournament/app/api/admin/tournament/[id]/)",
+      "Bash(ls /c/GitHub_Repos/eve-tournament/eve-tournament/app/tournament/[id]/)",
+      "Bash(ls /c/GitHub_Repos/eve-tournament/eve-tournament/app/api/admin/tournament/[id]/update/)",
+      "Bash(ls /c/GitHub_Repos/eve-tournament/eve-tournament/app/tournament/[id]/register/)"
     ],
     "additionalDirectories": [
       "c:\\GitHub_Repos\\eve-tournament\\eve-tournament\\app\\admin\\tournament\\[id]"

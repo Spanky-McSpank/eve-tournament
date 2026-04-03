@@ -1,5 +1,5 @@
-# EVE Tournament
-**1v1 Championship Bracket & Bookie Board for EVE Online**
+# Bloodlust Tournaments
+**EVE Online 1v1 Championship — Bloodlust Tournaments**
 
 Live: https://eve-tournament.vercel.app
 

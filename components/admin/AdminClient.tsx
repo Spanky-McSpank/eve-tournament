@@ -134,6 +134,20 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [statusLoading, setStatusLoading] = useState<string | null>(null)
 
+  // Tournament Rules form
+  const [showRulesForm, setShowRulesForm] = useState(false)
+  const [rulesShipClass, setRulesShipClass] = useState("")
+  const [rulesShipRestrictions, setRulesShipRestrictions] = useState("")
+  const [rulesBannedShips, setRulesBannedShips] = useState("")
+  const [rulesEngagement, setRulesEngagement] = useState("")
+  const [rulesSystemName, setRulesSystemName] = useState("")
+  const [rulesSystemId, setRulesSystemId] = useState<number | null>(null)
+  const [rulesFitting, setRulesFitting] = useState("")
+  const [rulesAdditional, setRulesAdditional] = useState("")
+  const [rulesSaveLoading, setRulesSaveLoading] = useState(false)
+  const [rulesSaveSuccess, setRulesSaveSuccess] = useState<string | null>(null)
+  const [rulesSaveError, setRulesSaveError] = useState<string | null>(null)
+
   // Section B
   const [editEntrantId, setEditEntrantId] = useState<string | null>(null)
   const [editEntrantFields, setEditEntrantFields] = useState<Record<string, string>>({})
@@ -395,6 +409,51 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
       setUpdateError(err instanceof Error ? err.message : "Unknown error")
     } finally {
       setUpdateLoading(false)
+    }
+  }
+
+  async function handleSystemNameBlur() {
+    if (!rulesSystemName.trim()) return
+    try {
+      const res = await fetch(`https://esi.evetech.net/latest/search/?categories=solar_system&search=${encodeURIComponent(rulesSystemName.trim())}&strict=true`)
+      if (!res.ok) return
+      const data = await res.json() as { solar_system?: number[] }
+      if (data.solar_system && data.solar_system.length > 0) {
+        setRulesSystemId(data.solar_system[0])
+      }
+    } catch { /* ignore ESI errors */ }
+  }
+
+  async function handleSaveRules() {
+    if (!mgmtTid) return
+    setRulesSaveLoading(true)
+    setRulesSaveError(null)
+    setRulesSaveSuccess(null)
+    try {
+      const res = await fetch(`/api/admin/tournament/${mgmtTid}/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ship_class: rulesShipClass || null,
+          ship_restrictions: rulesShipRestrictions || null,
+          banned_ships: rulesBannedShips || null,
+          engagement_rules: rulesEngagement || null,
+          system_name: rulesSystemName || null,
+          system_id: rulesSystemId ?? null,
+          fitting_restrictions: rulesFitting || null,
+          additional_rules: rulesAdditional || null,
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json() as { error?: string }
+        setRulesSaveError(d.error ?? "Failed to save")
+        return
+      }
+      setRulesSaveSuccess("Saved ✓")
+    } catch (err) {
+      setRulesSaveError(err instanceof Error ? err.message : "Unknown error")
+    } finally {
+      setRulesSaveLoading(false)
     }
   }
 
@@ -993,6 +1052,82 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
                     </button>
                     {deleteError && <span style={{ color: "#c0392b", fontSize: 11, fontFamily: "monospace" }}>{deleteError}</span>}
                   </div>
+                </div>
+
+                {/* ── Tournament Rules & Ship Class ── */}
+                <div style={{ marginTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
+                  <button
+                    onClick={() => setShowRulesForm((v) => !v)}
+                    style={{
+                      background: "transparent", border: "0.5px solid var(--ev-border2)",
+                      borderRadius: 4, color: "var(--ev-gold)", fontFamily: "monospace",
+                      fontSize: 10, letterSpacing: 1, padding: "5px 12px", cursor: "pointer",
+                    }}
+                  >
+                    {showRulesForm ? "▲ Hide Rules Form" : "⚔ TOURNAMENT RULES & SHIP CLASS"}
+                  </button>
+
+                  {showRulesForm && (
+                    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div>
+                        <label style={labelStyle}>SHIP CLASS</label>
+                        <input type="text" value={rulesShipClass} onChange={(e) => setRulesShipClass(e.target.value)}
+                          placeholder="e.g. Frigates, Destroyers, Cruisers" style={inputStyle} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>SHIP RESTRICTIONS</label>
+                        <textarea value={rulesShipRestrictions} onChange={(e) => setRulesShipRestrictions(e.target.value)}
+                          rows={3} placeholder="e.g. T1 and T2 hulls only. No faction ships."
+                          style={{ ...inputStyle, resize: "vertical", height: "auto" }} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>BANNED SHIPS</label>
+                        <textarea value={rulesBannedShips} onChange={(e) => setRulesBannedShips(e.target.value)}
+                          rows={2} placeholder="e.g. Dramiel, Daredevil, Astero"
+                          style={{ ...inputStyle, resize: "vertical", height: "auto" }} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>ENGAGEMENT RULES</label>
+                        <textarea value={rulesEngagement} onChange={(e) => setRulesEngagement(e.target.value)}
+                          rows={5} placeholder={"e.g. 1v1 only. No links. No logi.\nWarp-in at 0. First to destroy wins."}
+                          style={{ ...inputStyle, resize: "vertical", height: "auto" }} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>FIGHT SYSTEM</label>
+                        <input type="text" value={rulesSystemName}
+                          onChange={(e) => { setRulesSystemName(e.target.value); setRulesSystemId(null) }}
+                          onBlur={() => void handleSystemNameBlur()}
+                          placeholder="e.g. Jita, Amarr, 6VDT-H" style={inputStyle} />
+                        {rulesSystemId && (
+                          <div style={{ fontSize: 10, color: "#22c55e", fontFamily: "monospace", marginTop: 3 }}>
+                            ✓ System ID: {rulesSystemId}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <label style={labelStyle}>FITTING RESTRICTIONS</label>
+                        <textarea value={rulesFitting} onChange={(e) => setRulesFitting(e.target.value)}
+                          rows={2} placeholder="e.g. No deadspace. Meta 4 maximum."
+                          style={{ ...inputStyle, resize: "vertical", height: "auto" }} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>ADDITIONAL RULES</label>
+                        <textarea value={rulesAdditional} onChange={(e) => setRulesAdditional(e.target.value)}
+                          rows={3} placeholder="Anything else participants need to know."
+                          style={{ ...inputStyle, resize: "vertical", height: "auto" }} />
+                      </div>
+
+                      {rulesSaveError && <div style={{ color: "#c0392b", fontSize: 11, fontFamily: "monospace" }}>{rulesSaveError}</div>}
+                      {rulesSaveSuccess && <div style={{ color: "#22c55e", fontSize: 11, fontFamily: "monospace" }}>{rulesSaveSuccess}</div>}
+                      <button
+                        onClick={() => void handleSaveRules()}
+                        disabled={rulesSaveLoading}
+                        style={{ padding: "6px 18px", background: rulesSaveLoading ? "rgba(240,192,64,0.15)" : GOLD, border: "none", borderRadius: 4, color: rulesSaveLoading ? "var(--ev-muted)" : "var(--ev-bg)", fontSize: 11, fontWeight: 600, fontFamily: "monospace", cursor: rulesSaveLoading ? "not-allowed" : "pointer", alignSelf: "flex-start" }}
+                      >
+                        {rulesSaveLoading ? "Saving..." : "Save Rules"}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* ── Section B: Entrant Management ── */}

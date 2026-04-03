@@ -151,6 +151,7 @@ export default function TermsGate({ onAccept }: TermsGateProps) {
             }}>
               THE PAGE THAT<br />WILL NOT BE NAMED
             </div>
+            <div style={{ color: "#f59e0b", fontSize: 11, fontFamily: "monospace", letterSpacing: 2, marginTop: 6 }}>Presented by Bloodlust Tournaments</div>
           </div>
 
           <GoldRule />
@@ -170,14 +171,14 @@ export default function TermsGate({ onAccept }: TermsGateProps) {
                 Article I
               </div>
               <div style={{ color: "#ccc", fontSize: 14, lineHeight: 1.65, marginBottom: 10 }}>
-                The <span style={{ color: "#E8B020", fontWeight: 700 }}>FIRST</span> rule of Tournament Bookie Board is:
+                The <span style={{ color: "#E8B020", fontWeight: 700 }}>FIRST</span> rule of Bloodlust Tournaments is:
               </div>
               <div style={{
                 fontFamily: "monospace", fontWeight: 700,
                 fontSize: "var(--font-xl)", color: "#E8B020",
                 textTransform: "uppercase", lineHeight: 1.25,
               }}>
-                YOU DO NOT TALK ABOUT<br />TOURNAMENT BOOKIE BOARD.
+                YOU DO NOT TALK ABOUT<br />BLOODLUST TOURNAMENTS.
               </div>
             </div>
 
@@ -189,7 +190,7 @@ export default function TermsGate({ onAccept }: TermsGateProps) {
                 Article II
               </div>
               <div style={{ color: "#ccc", fontSize: 14, lineHeight: 1.65, marginBottom: 10 }}>
-                The <span style={{ color: "#E8B020", fontWeight: 700 }}>SECOND</span> rule of Tournament Bookie Board is:
+                The <span style={{ color: "#E8B020", fontWeight: 700 }}>SECOND</span> rule of Bloodlust Tournaments is:
               </div>
               <div style={{
                 background: "rgba(192,30,30,0.07)",
@@ -201,7 +202,7 @@ export default function TermsGate({ onAccept }: TermsGateProps) {
                   textTransform: "uppercase", lineHeight: 1.25,
                   textShadow: "0 0 32px rgba(220,40,40,0.22)",
                 }}>
-                  YOU DO NOT TALK ABOUT<br />TOURNAMENT BOOKIE BOARD.
+                  YOU DO NOT TALK ABOUT<br />BLOODLUST TOURNAMENTS.
                 </div>
               </div>
             </div>
@@ -338,7 +339,7 @@ export default function TermsGate({ onAccept }: TermsGateProps) {
             color: "#2a2a2a", fontSize: 9,
             fontFamily: "monospace", letterSpacing: 2,
           }}>
-            THE PAGE THAT WILL NOT BE NAMED · ESTABLISHED 2025
+            BLOODLUST TOURNAMENTS · ESTABLISHED 2025
           </div>
 
         </div>

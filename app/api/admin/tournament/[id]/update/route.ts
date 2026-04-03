@@ -35,6 +35,20 @@ export async function POST(
   if (body.paused !== undefined) update.paused = Boolean(body.paused)
   if (body.announcement !== undefined) update.announcement = body.announcement === null ? null : String(body.announcement)
 
+  // Tournament rules fields
+  const rulesFields = [
+    "ship_class", "ship_restrictions", "banned_ships", "engagement_rules",
+    "system_name", "fitting_restrictions", "additional_rules",
+  ] as const
+  for (const field of rulesFields) {
+    if (body[field] !== undefined) {
+      update[field] = body[field] === null || body[field] === "" ? null : String(body[field])
+    }
+  }
+  if (body.system_id !== undefined) {
+    update.system_id = body.system_id === null ? null : Number(body.system_id)
+  }
+
   if (body.status !== undefined) {
     const newStatus = String(body.status)
     const currentStatus = tournament.status as string

@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EVE Tournament",
-  description: "1v1 Championship Bracket & Bookie Board for EVE Online",
+  title: "Bloodlust Tournaments",
+  description: "EVE Online 1v1 Championship — Bloodlust Tournaments",
 };
 
 export default function RootLayout({

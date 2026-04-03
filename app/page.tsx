@@ -64,8 +64,94 @@ export default function HomePage() {
           color: "var(--ev-muted)", fontSize: "var(--font-xl)",
           fontFamily: "monospace", marginTop: 14, letterSpacing: 2,
         }}>
-          1v1 Championship · Bookie Board · Live Brackets
+          1v1 Championship · ISK on the Line
         </p>
+
+        {/* Auth Benefits Card */}
+        <div style={{
+          maxWidth: 960, margin: "0 auto", padding: "0 32px",
+        }}>
+          <div style={{
+            marginTop: 32, marginBottom: 16,
+            border: "0.5px solid var(--ev-border2)",
+            borderLeft: "3px solid var(--ev-gold)",
+            borderRadius: "var(--border-radius)",
+            padding: "var(--card-padding)",
+            background: "rgba(255,255,255,0.02)",
+          }}>
+            <div style={{ fontSize: 10, fontFamily: "monospace", color: "var(--ev-gold)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>
+              WHY AUTHENTICATE?
+            </div>
+            <p style={{ fontSize: 12, color: "var(--ev-muted)", lineHeight: 1.7, margin: "0 0 10px 0" }}>
+              Logging in with EVE SSO makes everything smoother. Authentication is optional but recommended — here&apos;s what you get:
+            </p>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+              {[
+                "Your character stats load automatically from zKillboard",
+                "Register for tournaments with one click",
+                "Place bets without entering your character info manually",
+                "Your bet history and records track automatically",
+                "Admins can verify your identity instantly",
+              ].map((item) => (
+                <li key={item} style={{ fontSize: 12, color: "var(--ev-muted)", lineHeight: 1.7 }}>
+                  <span style={{ color: "var(--ev-gold)" }}>• </span>{item}
+                </li>
+              ))}
+            </ul>
+            <div style={{ fontSize: 9, fontFamily: "monospace", color: "#f59e0b", letterSpacing: 2, textTransform: "uppercase", marginTop: 16 }}>ESI SCOPES WE REQUEST</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ background: "rgba(255,255,255,0.05)", border: "0.5px solid var(--ev-border2)", borderRadius: 4, padding: "4px 8px", fontFamily: "monospace", fontSize: 10 }}>publicData</span>
+                <span style={{ fontSize: 12, color: "var(--ev-muted)" }}>Your public character information only</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ background: "rgba(255,255,255,0.05)", border: "0.5px solid var(--ev-border2)", borderRadius: 4, padding: "4px 8px", fontFamily: "monospace", fontSize: 10 }}>esi-killmails.read_killmails.v1</span>
+                <span style={{ fontSize: 12, color: "var(--ev-muted)" }}>Read killmail data for match verification</span>
+              </div>
+            </div>
+            <p style={{ fontSize: 11, fontStyle: "italic", color: "var(--ev-muted)", marginTop: 12, marginBottom: 0 }}>
+              We do not access your assets, wallet, skills, location, contacts, or any private data. Ever.
+            </p>
+          </div>
+
+          {/* Auth Reset Reminder Card */}
+          <div style={{
+            marginBottom: 32,
+            border: "0.5px solid rgba(245,158,11,0.3)",
+            borderLeft: "3px solid #f59e0b",
+            borderRadius: "var(--border-radius)",
+            padding: "var(--card-padding)",
+            background: "rgba(245,158,11,0.03)",
+          }}>
+            <div style={{ fontSize: 10, fontFamily: "monospace", color: "#f59e0b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>
+              ⚠ WEEKLY AUTH REMINDER
+            </div>
+            <p style={{ fontSize: 12, color: "var(--ev-muted)", lineHeight: 1.7, marginBottom: 8, marginTop: 0 }}>
+              Bloodlust Tournaments runs weekly. After each tournament concludes, we strongly recommend revoking this application&apos;s ESI access and re-authenticating fresh for the next event.
+            </p>
+            <p style={{ fontSize: 12, color: "var(--ev-muted)", lineHeight: 1.7, marginBottom: 8, marginTop: 0 }}>
+              This is good operational security practice and ensures your token stays clean between events.
+            </p>
+            <a
+              href="https://community.eveonline.com/support/third-party-applications/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-block", width: "100%", padding: "10px 0",
+                marginTop: 14, marginBottom: 8,
+                background: "transparent", border: "1px solid #f59e0b",
+                borderRadius: "var(--border-radius)", color: "#f59e0b",
+                fontSize: 12, fontFamily: "monospace", letterSpacing: 1,
+                cursor: "pointer", textDecoration: "none", textAlign: "center",
+              }}
+            >
+              MANAGE YOUR ESI AUTHORIZATIONS →
+            </a>
+            <div style={{ fontSize: 10, fontFamily: "monospace", color: "var(--ev-muted)", textAlign: "center" }}>
+              Log in → find &apos;Bloodlust Tournaments&apos; → Revoke Access · Takes 30 seconds. Worth doing every week.
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tournament cards */}

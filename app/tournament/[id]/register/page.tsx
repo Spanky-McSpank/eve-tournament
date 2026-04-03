@@ -7,6 +7,7 @@ import { useEveAuth } from "@/hooks/useEveAuth"
 import EveLoginButton from "@/components/ui/EveLoginButton"
 import AdminBackButton from "@/components/admin/AdminBackButton"
 import RegistrationRulesGate from "@/components/tournament/RegistrationRulesGate"
+import TournamentRulesCard from "@/components/tournament/TournamentRulesCard"
 
 const GOLD = "var(--ev-gold-light)"
 
@@ -15,6 +16,14 @@ interface Tournament {
   name: string
   status: string
   entrant_count: number
+  ship_class?: string | null
+  ship_restrictions?: string | null
+  banned_ships?: string | null
+  engagement_rules?: string | null
+  system_name?: string | null
+  system_id?: number | null
+  fitting_restrictions?: string | null
+  additional_rules?: string | null
 }
 
 interface Entrant {
@@ -245,9 +254,20 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
   return (
     <RegistrationRulesGate tournamentId={id} tournamentName={tournamentDisplayName}>
       <div style={pageStyle}>
+        <div style={{ width: "100%", maxWidth: 480 }}>
+          <TournamentRulesCard tournament={{
+            ship_class: tournament.ship_class ?? null,
+            ship_restrictions: tournament.ship_restrictions ?? null,
+            banned_ships: tournament.banned_ships ?? null,
+            engagement_rules: tournament.engagement_rules ?? null,
+            system_name: tournament.system_name ?? null,
+            system_id: tournament.system_id ?? null,
+            fitting_restrictions: tournament.fitting_restrictions ?? null,
+            additional_rules: tournament.additional_rules ?? null,
+          }} />
         <div style={{
           background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
-          borderRadius: 10, padding: 40, maxWidth: 440, width: "100%",
+          borderRadius: 10, padding: 40, width: "100%",
         }}>
           <div style={{ color: GOLD, fontSize: 16, fontFamily: "monospace", marginBottom: 20, letterSpacing: 1 }}>
             {tournament.name}
@@ -298,6 +318,7 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
           <div style={{ textAlign: "center", marginTop: 10, color: "var(--ev-muted)", fontSize: 11, fontFamily: "monospace" }}>
             Spots remaining: {spotsRemaining}
           </div>
+        </div>
         </div>
       </div>
     </RegistrationRulesGate>
