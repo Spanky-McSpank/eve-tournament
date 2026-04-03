@@ -139,21 +139,6 @@ export default function HomePage() {
               padding: "4px 12px", border: "0.5px solid var(--ev-border2)",
               borderRadius: 4,
             }}>ADMIN PANEL</Link>
-            <div style={{ marginTop: 20 }}>
-              <button
-                onClick={() => {
-                  try { localStorage.removeItem("terms_accepted_v1") } catch { /* ignore */ }
-                  window.location.reload()
-                }}
-                style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  fontSize: 9, color: "#333", fontFamily: "monospace",
-                  letterSpacing: 1, textDecoration: "underline",
-                }}
-              >
-                Reset Terms Gate (Testing)
-              </button>
-            </div>
           </div>
         )}
       </div>

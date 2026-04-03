@@ -299,6 +299,15 @@ export default function TermsGate({ onAccept }: TermsGateProps) {
             By clicking below you acknowledge these terms and agree to abide by them.
             <br />Ignorance is not an excuse. Good luck, capsuleer.
           </div>
+          <div style={{
+            textAlign: "center", padding: "0 0 20px",
+            color: "#b8860b", fontSize: 10, lineHeight: 1.7,
+            fontStyle: "italic", fontFamily: "monospace",
+          }}>
+            This activity is not sanctioned by CCP Games or any alliance leadership.<br />
+            Participation is entirely at your own discretion.<br />
+            By continuing you accept full personal responsibility.
+          </div>
 
           {/* Accept button */}
           <button
@@ -320,7 +329,7 @@ export default function TermsGate({ onAccept }: TermsGateProps) {
               textTransform: "uppercase",
             }}
           >
-            ⚔ I ACCEPT THE TERMS ⚔
+            ⚔ I ACCEPT — AND I&apos;LL KEEP MY MOUTH SHUT ⚔
           </button>
 
           {/* Footer */}

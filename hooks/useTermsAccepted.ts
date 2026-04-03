@@ -1,28 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-
-const TERMS_KEY = 'terms_accepted_v1'
+import { useState, useCallback } from 'react'
 
 export function useTermsAccepted(): {
-  hasAccepted: boolean | null  // null = not yet checked (SSR/hydration)
+  hasAccepted: boolean
   acceptTerms: () => void
 } {
-  const [hasAccepted, setHasAccepted] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    try {
-      setHasAccepted(localStorage.getItem(TERMS_KEY) === 'true')
-    } catch {
-      // localStorage unavailable — let them through
-      setHasAccepted(true)
-    }
-  }, [])
-
-  const acceptTerms = useCallback(() => {
-    try { localStorage.setItem(TERMS_KEY, 'true') } catch { /* ignore */ }
-    setHasAccepted(true)
-  }, [])
-
+  const [hasAccepted, setHasAccepted] = useState(false)
+  const acceptTerms = useCallback(() => { setHasAccepted(true) }, [])
   return { hasAccepted, acceptTerms }
 }

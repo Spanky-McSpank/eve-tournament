@@ -4,7 +4,13 @@
       "Bash(find /c/GitHub_Repos/eve-tournament/eve-tournament -name route.ts -path */api/admin/bracket/*lock*)",
       "Bash(find /c/GitHub_Repos/eve-tournament/eve-tournament -name route.ts -path */api/admin/bracket/*status*)",
       "Bash(ls -la /c/GitHub_Repos/eve-tournament/eve-tournament/lib/*.ts)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(mkdir -p \"c:\\\\GitHub_Repos\\\\eve-tournament\\\\eve-tournament\\\\app\\\\api\\\\tournament\\\\[id]\\\\props\\\\propose\")",
+      "Bash(mkdir -p \"c:\\\\GitHub_Repos\\\\eve-tournament\\\\eve-tournament\\\\app\\\\api\\\\tournament\\\\[id]\\\\props\\\\accept\")",
+      "Bash(mkdir -p \"c:\\\\GitHub_Repos\\\\eve-tournament\\\\eve-tournament\\\\app\\\\api\\\\admin\\\\props\\\\[id]\\\\update\")",
+      "Bash(mkdir -p \"c:\\\\GitHub_Repos\\\\eve-tournament\\\\eve-tournament\\\\app\\\\api\\\\admin\\\\props\\\\[id]\\\\resolve\")",
+      "Bash(mkdir -p \"c:\\\\GitHub_Repos\\\\eve-tournament\\\\eve-tournament\\\\app\\\\api\\\\admin\\\\props\\\\[id]\\\\void\")",
+      "Bash(echo \"Exit: $?\")"
     ],
     "additionalDirectories": [
       "c:\\GitHub_Repos\\eve-tournament\\eve-tournament\\app\\admin\\tournament\\[id]"
