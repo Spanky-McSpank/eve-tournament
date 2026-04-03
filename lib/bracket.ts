@@ -3,6 +3,7 @@
 
 import { createSupabaseServerClient } from './supabase'
 import { calculateOdds, MatchOdds } from './odds'
+import { checkAndResolveTournamentProps, checkPropLockouts } from './props'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -262,6 +263,12 @@ export async function advanceWinner(
   }
 
   await resolveMatchBets(bracketId, winnerId)
+
+  // Check and resolve tournament props after every match
+  try {
+    await checkAndResolveTournamentProps(supabase, bracket.tournament_id as string)
+    await checkPropLockouts(supabase, bracket.tournament_id as string, (bracket.round as number) + 1)
+  } catch { /* prop resolution is non-critical */ }
 
   // Check if all matches in this round are complete
   const { data: roundBrackets } = await supabase

@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { formatISK } from "@/lib/utils"
 import { calculateAcceptorStake } from "@/lib/odds"
+import PropManagementSection from "./PropManagementSection"
 
 const GOLD = "var(--ev-gold-light)"
 
@@ -1338,6 +1339,10 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
             )}
           </div>
         )}
+
+        {/* ── PROPOSITION BET MANAGEMENT ── */}
+        <PropManagementSection tournaments={tournaments} inputStyle={inputStyle} labelStyle={labelStyle} subHeadStyle={subHeadStyle} tinyBtnStyle={tinyBtnStyle} />
+
       </div>
 
       {/* ── Override Modal ── */}

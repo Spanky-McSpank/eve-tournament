@@ -9,9 +9,10 @@ import OddsCard from "@/components/bookie/OddsCard"
 import AdminBackButton from "@/components/admin/AdminBackButton"
 import RecordBoard from "@/components/bookie/RecordBoard"
 import SettlementBoard from "@/components/bookie/SettlementBoard"
+import PropsBoard from "@/components/bookie/PropsBoard"
 
 const GOLD = "var(--ev-gold-light)"
-type Tab = "board" | "settlements" | "records"
+type Tab = "board" | "settlements" | "records" | "props"
 
 interface Tournament { id: string; name: string; status: string }
 interface MeResponse {
@@ -101,6 +102,7 @@ export default function BetsPage({ params }: { params: Promise<{ id: string }> }
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "board", label: "Betting Board" },
+    { key: "props", label: "Props" },
     { key: "settlements", label: "Settlements" },
     { key: "records", label: "Records" },
   ]
@@ -202,6 +204,9 @@ export default function BetsPage({ params }: { params: Promise<{ id: string }> }
               ))}
             </div>
           )
+        )}
+        {tab === "props" && (
+          <PropsBoard tournamentId={id} currentCharacterId={me.character?.character_id} />
         )}
         {tab === "settlements" && (
           <SettlementBoard
