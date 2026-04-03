@@ -214,14 +214,14 @@ export default function OddsCard({
                         {" vs "}<span style={{ color: "#aaa" }}>{formatISK(p.acceptorStake)}</span>
                       </div>
                     </div>
-                    {isComplete || isMyProposal ? (
+                    {isComplete || match.locked || isMyProposal ? (
                       <span style={{
                         fontSize: 9, fontFamily: "monospace",
                         padding: "3px 8px", borderRadius: 20,
                         border: `1px solid rgba(240,192,64,0.3)`,
                         color: "rgba(240,192,64,0.5)",
                       }}>
-                        {isComplete ? "Closed" : "Your Bet"}
+                        {isComplete ? "Closed" : match.locked ? "🔒" : "Your Bet"}
                       </span>
                     ) : !currentCharacterId ? (
                       <button onClick={() => { window.location.href = `/api/auth/eve?returnTo=${encodeURIComponent(window.location.pathname)}` }} style={{
@@ -256,11 +256,12 @@ export default function OddsCard({
               color: C.muted, fontSize: 12, fontFamily: "monospace", cursor: "not-allowed", opacity: 0.5,
             }}>Match Complete</button>
           ) : match.locked ? (
-            <button disabled style={{
-              width: "100%", padding: "8px 0", background: "transparent",
-              border: `0.5px solid rgba(249,115,22,0.3)`, borderRadius: 6,
-              color: "#f97316", fontSize: 12, fontFamily: "monospace", cursor: "not-allowed", opacity: 0.7,
-            }}>🔒 Betting Locked</button>
+            <div style={{
+              width: "100%", padding: "10px 0", textAlign: "center",
+              background: "rgba(192,57,43,0.1)", border: "1px solid rgba(192,57,43,0.3)",
+              borderRadius: 6, color: "#c0392b", fontSize: 12, fontFamily: "monospace",
+              letterSpacing: 1, fontWeight: 600,
+            }}>🔒 BETTING CLOSED</div>
           ) : myProposal ? (
             <button disabled style={{
               width: "100%", padding: "8px 0", background: "transparent",

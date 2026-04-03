@@ -57,7 +57,7 @@ export async function POST(
 
   if (!bracket) return NextResponse.json({ error: "Match not found" }, { status: 404 })
   if (bracket.winner_id !== null) return NextResponse.json({ error: "Match is already complete" }, { status: 409 })
-  if (bracket.locked) return NextResponse.json({ error: "Betting is locked for this match" }, { status: 409 })
+  if (bracket.locked) return NextResponse.json({ error: "Betting has been closed for this match by the administrator." }, { status: 409 })
   if (bracket.entrant1_id !== String(predictedWinnerId) && bracket.entrant2_id !== String(predictedWinnerId)) {
     return NextResponse.json({ error: "predictedWinnerId is not a participant in this match" }, { status: 400 })
   }

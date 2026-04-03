@@ -6,6 +6,7 @@ import { use, useEffect, useState } from "react"
 import { useEveAuth } from "@/hooks/useEveAuth"
 import EveLoginButton from "@/components/ui/EveLoginButton"
 import AdminBackButton from "@/components/admin/AdminBackButton"
+import RegistrationRulesGate from "@/components/tournament/RegistrationRulesGate"
 
 const GOLD = "var(--ev-gold-light)"
 
@@ -119,13 +120,16 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
     )
   }
 
+  // Gate: rules acceptance required before registration
+  const tournamentDisplayName = tournament?.name ?? "Tournament"
+
   const adminBack = isAdmin ? (
     <div style={{ position: "absolute", top: 16, left: 16 }}>
       <AdminBackButton />
     </div>
   ) : null
 
-  // State A: closed or not found
+  // State A: closed or not found (no gate needed — they can't register anyway)
   if (!tournament || tournament.status !== "registration") {
     return (
       <div style={pageStyle}>
@@ -152,84 +156,86 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
   // State B: not authenticated
   if (!isAuthenticated) {
     return (
-      <div style={pageStyle}>
-        {adminBack}
-        <div style={{
-          background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
-          borderRadius: 10, padding: 40, textAlign: "center", maxWidth: 400,
-        }}>
-          <div style={{ color: GOLD, fontSize: 18, fontFamily: "monospace", marginBottom: 8 }}>
-            {tournament.name}
-          </div>
-          <div style={{ color: "var(--ev-muted)", fontSize: 13, marginBottom: 24 }}>
-            Log in with EVE Online to register for this tournament
-          </div>
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <EveLoginButton />
+      <RegistrationRulesGate tournamentId={id} tournamentName={tournamentDisplayName}>
+        <div style={pageStyle}>
+          {adminBack}
+          <div style={{
+            background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
+            borderRadius: 10, padding: 40, textAlign: "center", maxWidth: 400,
+          }}>
+            <div style={{ color: GOLD, fontSize: 18, fontFamily: "monospace", marginBottom: 8 }}>
+              {tournament.name}
+            </div>
+            <div style={{ color: "var(--ev-muted)", fontSize: 13, marginBottom: 24 }}>
+              Log in with EVE Online to register for this tournament
+            </div>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <EveLoginButton />
+            </div>
           </div>
         </div>
-      </div>
+      </RegistrationRulesGate>
     )
   }
 
   // State C: already registered
   if (registered && myEntrant) {
     const eff = myEntrant.efficiency ?? 0
-    const effPct = Math.round(eff * 100)
-    const effColor = effPct >= 60 ? "#22c55e" : effPct >= 40 ? GOLD : "#c0392b"
     return (
-      <div style={pageStyle}>
-        <div style={{
-          background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
-          borderRadius: 10, padding: 40, maxWidth: 440, width: "100%",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24 }}>
-            <div style={{ borderRadius: "50%", overflow: "hidden", width: 96, height: 96, flexShrink: 0 }}>
-              {myEntrant.portrait_url
-                ? <Image src={myEntrant.portrait_url} alt={myEntrant.character_name} width={96} height={96}
-                    style={{ borderRadius: "50%", objectFit: "cover" }} />
-                : <svg width={96} height={96} viewBox="0 0 96 96" fill="none">
-                    <circle cx="48" cy="48" r="48" fill="var(--ev-steel)" />
-                    <circle cx="48" cy="36" r="16" fill="var(--ev-card2)" />
-                    <ellipse cx="48" cy="76" rx="24" ry="20" fill="var(--ev-card2)" />
-                  </svg>
-              }
-            </div>
-            <div>
-              <div style={{ color: GOLD, fontSize: 18, fontWeight: 600 }}>{myEntrant.character_name}</div>
-              {myEntrant.corporation_name && (
-                <div style={{ color: "var(--ev-muted)", fontSize: 12, marginTop: 2 }}>{myEntrant.corporation_name}</div>
-              )}
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
-            <div>
-              <div style={{ color: "var(--ev-muted)", fontSize: 10, fontFamily: "monospace", letterSpacing: 1 }}>30D KILLS</div>
-              <div style={{ color: "var(--ev-text)", fontSize: 16, fontFamily: "monospace" }}>{myEntrant.kills_30d}</div>
-            </div>
-            <div>
-              <div style={{ color: "var(--ev-muted)", fontSize: 10, fontFamily: "monospace", letterSpacing: 1 }}>30D LOSSES</div>
-              <div style={{ color: "var(--ev-text)", fontSize: 16, fontFamily: "monospace" }}>{myEntrant.losses_30d}</div>
-            </div>
-          </div>
-          <EfficiencyBar value={eff} />
-
+      <RegistrationRulesGate tournamentId={id} tournamentName={tournamentDisplayName}>
+        <div style={pageStyle}>
           <div style={{
-            marginTop: 24, padding: "12px 0", textAlign: "center",
-            color: "#22c55e", fontSize: 16, fontWeight: 600,
-            border: "1px solid rgba(34,197,94,0.3)", borderRadius: 10,
-            background: "rgba(34,197,94,0.06)",
+            background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
+            borderRadius: 10, padding: 40, maxWidth: 440, width: "100%",
           }}>
-            ✓ You&apos;re Registered
-          </div>
-          <div style={{ textAlign: "center", marginTop: 16 }}>
-            <Link href={`/tournament/${id}`} style={{
-              fontSize: 12, color: "var(--ev-muted)", fontFamily: "monospace", textDecoration: "none",
-            }}>← View Tournament</Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24 }}>
+              <div style={{ borderRadius: "50%", overflow: "hidden", width: 96, height: 96, flexShrink: 0 }}>
+                {myEntrant.portrait_url
+                  ? <Image src={myEntrant.portrait_url} alt={myEntrant.character_name} width={96} height={96}
+                      style={{ borderRadius: "50%", objectFit: "cover" }} />
+                  : <svg width={96} height={96} viewBox="0 0 96 96" fill="none">
+                      <circle cx="48" cy="48" r="48" fill="var(--ev-steel)" />
+                      <circle cx="48" cy="36" r="16" fill="var(--ev-card2)" />
+                      <ellipse cx="48" cy="76" rx="24" ry="20" fill="var(--ev-card2)" />
+                    </svg>
+                }
+              </div>
+              <div>
+                <div style={{ color: GOLD, fontSize: 18, fontWeight: 600 }}>{myEntrant.character_name}</div>
+                {myEntrant.corporation_name && (
+                  <div style={{ color: "var(--ev-muted)", fontSize: 12, marginTop: 2 }}>{myEntrant.corporation_name}</div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
+              <div>
+                <div style={{ color: "var(--ev-muted)", fontSize: 10, fontFamily: "monospace", letterSpacing: 1 }}>30D KILLS</div>
+                <div style={{ color: "var(--ev-text)", fontSize: 16, fontFamily: "monospace" }}>{myEntrant.kills_30d}</div>
+              </div>
+              <div>
+                <div style={{ color: "var(--ev-muted)", fontSize: 10, fontFamily: "monospace", letterSpacing: 1 }}>30D LOSSES</div>
+                <div style={{ color: "var(--ev-text)", fontSize: 16, fontFamily: "monospace" }}>{myEntrant.losses_30d}</div>
+              </div>
+            </div>
+            <EfficiencyBar value={eff} />
+
+            <div style={{
+              marginTop: 24, padding: "12px 0", textAlign: "center",
+              color: "#22c55e", fontSize: 16, fontWeight: 600,
+              border: "1px solid rgba(34,197,94,0.3)", borderRadius: 10,
+              background: "rgba(34,197,94,0.06)",
+            }}>
+              ✓ You&apos;re Registered
+            </div>
+            <div style={{ textAlign: "center", marginTop: 16 }}>
+              <Link href={`/tournament/${id}`} style={{
+                fontSize: 12, color: "var(--ev-muted)", fontFamily: "monospace", textDecoration: "none",
+              }}>← View Tournament</Link>
+            </div>
           </div>
         </div>
-      </div>
+      </RegistrationRulesGate>
     )
   }
 
@@ -237,61 +243,63 @@ export default function RegisterPage({ params }: { params: Promise<{ id: string 
   const spotsRemaining = tournament.entrant_count - entrantCount
 
   return (
-    <div style={pageStyle}>
-      <div style={{
-        background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
-        borderRadius: 10, padding: 40, maxWidth: 440, width: "100%",
-      }}>
-        <div style={{ color: GOLD, fontSize: 16, fontFamily: "monospace", marginBottom: 20, letterSpacing: 1 }}>
-          {tournament.name}
-        </div>
+    <RegistrationRulesGate tournamentId={id} tournamentName={tournamentDisplayName}>
+      <div style={pageStyle}>
+        <div style={{
+          background: "var(--ev-card)", border: "0.5px solid var(--ev-border2)",
+          borderRadius: 10, padding: 40, maxWidth: 440, width: "100%",
+        }}>
+          <div style={{ color: GOLD, fontSize: 16, fontFamily: "monospace", marginBottom: 20, letterSpacing: 1 }}>
+            {tournament.name}
+          </div>
 
-        {character && (
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-            <div style={{ borderRadius: "50%", overflow: "hidden", width: 96, height: 96, flexShrink: 0 }}>
-              <Image
-                src={`https://images.evetech.net/characters/${character.character_id}/portrait?size=128`}
-                alt={character.character_name}
-                width={96} height={96}
-                style={{ borderRadius: "50%", objectFit: "cover" }}
-              />
-            </div>
-            <div>
-              <div style={{ color: "var(--ev-text)", fontSize: 16, fontWeight: 500 }}>{character.character_name}</div>
-              <div style={{ color: "var(--ev-muted)", fontSize: 11, marginTop: 4, fontFamily: "monospace" }}>
-                Stats will be fetched on registration
+          {character && (
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+              <div style={{ borderRadius: "50%", overflow: "hidden", width: 96, height: 96, flexShrink: 0 }}>
+                <Image
+                  src={`https://images.evetech.net/characters/${character.character_id}/portrait?size=128`}
+                  alt={character.character_name}
+                  width={96} height={96}
+                  style={{ borderRadius: "50%", objectFit: "cover" }}
+                />
+              </div>
+              <div>
+                <div style={{ color: "var(--ev-text)", fontSize: 16, fontWeight: 500 }}>{character.character_name}</div>
+                <div style={{ color: "var(--ev-muted)", fontSize: 11, marginTop: 4, fontFamily: "monospace" }}>
+                  Stats will be fetched on registration
+                </div>
               </div>
             </div>
+          )}
+
+          {regError && (
+            <div style={{
+              color: "#c0392b", fontSize: 12, fontFamily: "monospace",
+              padding: "8px 12px", background: "rgba(192,57,43,0.08)",
+              border: "1px solid rgba(192,57,43,0.22)", borderRadius: 4, marginBottom: 16,
+            }}>{regError}</div>
+          )}
+
+          <button
+            onClick={handleRegister}
+            disabled={registering || spotsRemaining <= 0}
+            style={{
+              width: "100%", padding: "12px 0",
+              background: registering || spotsRemaining <= 0 ? "rgba(240,192,64,0.15)" : GOLD,
+              border: "none", borderRadius: 10,
+              color: registering || spotsRemaining <= 0 ? "var(--ev-muted)" : "var(--ev-bg)",
+              fontSize: 14, fontWeight: 700,
+              cursor: registering || spotsRemaining <= 0 ? "not-allowed" : "pointer",
+              fontFamily: "monospace",
+            }}
+          >
+            {registering ? "Registering..." : `Register for ${tournament.name}`}
+          </button>
+          <div style={{ textAlign: "center", marginTop: 10, color: "var(--ev-muted)", fontSize: 11, fontFamily: "monospace" }}>
+            Spots remaining: {spotsRemaining}
           </div>
-        )}
-
-        {regError && (
-          <div style={{
-            color: "#c0392b", fontSize: 12, fontFamily: "monospace",
-            padding: "8px 12px", background: "rgba(192,57,43,0.08)",
-            border: "1px solid rgba(192,57,43,0.22)", borderRadius: 4, marginBottom: 16,
-          }}>{regError}</div>
-        )}
-
-        <button
-          onClick={handleRegister}
-          disabled={registering || spotsRemaining <= 0}
-          style={{
-            width: "100%", padding: "12px 0",
-            background: registering || spotsRemaining <= 0 ? "rgba(240,192,64,0.15)" : GOLD,
-            border: "none", borderRadius: 10,
-            color: registering || spotsRemaining <= 0 ? "var(--ev-muted)" : "var(--ev-bg)",
-            fontSize: 14, fontWeight: 700,
-            cursor: registering || spotsRemaining <= 0 ? "not-allowed" : "pointer",
-            fontFamily: "monospace",
-          }}
-        >
-          {registering ? "Registering..." : `Register for ${tournament.name}`}
-        </button>
-        <div style={{ textAlign: "center", marginTop: 10, color: "var(--ev-muted)", fontSize: 11, fontFamily: "monospace" }}>
-          Spots remaining: {spotsRemaining}
         </div>
       </div>
-    </div>
+    </RegistrationRulesGate>
   )
 }

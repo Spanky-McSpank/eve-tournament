@@ -19,6 +19,7 @@ const C = {
   danger: "var(--ev-danger)",
 } as const
 
+const BRONZE = "#CD7F32"
 const PORTRAIT_SIZE = "clamp(40px, 3.2vw, 56px)"
 
 function CapsuleerSilhouette({ size }: { size: number }) {
@@ -177,10 +178,14 @@ export interface MatchCardProps {
   match: BracketWithEntrants
   isAdmin: boolean
   onResultEntered: () => void
+  isThirdPlace?: boolean
 }
 
-export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCardProps) {
+export default function MatchCard({ match, isAdmin, onResultEntered, isThirdPlace }: MatchCardProps) {
   const [showModal, setShowModal] = useState(false)
+  const [locked, setLocked] = useState(match.locked)
+  const [lockConfirming, setLockConfirming] = useState(false)
+  const [lockLoading, setLockLoading] = useState(false)
 
   const isComplete = Boolean(match.winner)
   const bothSet = Boolean(match.entrant1 && match.entrant2)
@@ -191,42 +196,120 @@ export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCard
   const e2IsWinner = isComplete && match.winner?.id === match.entrant2?.id
   const e2IsLoser = isComplete && !e2IsWinner && Boolean(match.entrant2)
 
+  async function handleLockToggle(newLocked: boolean) {
+    setLockLoading(true)
+    setLockConfirming(false)
+    try {
+      const res = await fetch(`/api/admin/bracket/${match.id}/lock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locked: newLocked }),
+      })
+      if (res.ok) {
+        setLocked(newLocked)
+        onResultEntered() // trigger refetch
+      }
+    } finally {
+      setLockLoading(false)
+    }
+  }
+
   return (
     <>
       <div style={{
         background: C.card,
-        border: `0.5px solid ${C.border2}`,
+        border: `0.5px solid ${isThirdPlace ? BRONZE + "55" : C.border2}`,
         borderRadius: "var(--border-radius)",
         overflow: "hidden",
         width: "100%",
         minWidth: "clamp(320px, 24vw, 440px)",
       }}>
-        {/* Status pill */}
+        {/* Header bar */}
         <div style={{
           padding: "6px 12px",
           display: "flex", alignItems: "center", justifyContent: "space-between",
           borderBottom: `0.5px solid ${C.border2}`,
           background: C.card2,
+          gap: 8,
         }}>
-          <span style={{ fontSize: 9, fontFamily: "monospace", color: C.muted, letterSpacing: 1 }}>
-            R{match.round} · M{match.match_number}
-          </span>
-          {isComplete ? (
+          {/* Left: round label or 3rd place badge */}
+          {isThirdPlace ? (
             <span style={{
               fontSize: 9, fontFamily: "monospace", letterSpacing: 1,
               padding: "2px 8px", borderRadius: 20,
-              background: "#1A1508", color: C.champagne, border: `0.5px solid ${C.border2}`,
-            }}>Match Complete</span>
-          ) : bothSet ? (
-            <span style={{
-              fontSize: 9, fontFamily: "monospace", letterSpacing: 1,
-              padding: "2px 8px", borderRadius: 20,
-              background: "#052010", color: C.live, border: "0.5px solid rgba(34,197,94,0.27)",
-            }}>● Live Odds</span>
-          ) : null}
+              background: "rgba(205,127,50,0.12)",
+              color: BRONZE, border: `0.5px solid ${BRONZE}55`,
+            }}>🥉 3RD PLACE</span>
+          ) : (
+            <span style={{ fontSize: 9, fontFamily: "monospace", color: C.muted, letterSpacing: 1 }}>
+              R{match.round} · M{match.match_number}
+            </span>
+          )}
+
+          {/* Right section: admin lock toggle + status pill */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+            {/* Admin lock toggle — only when match not complete */}
+            {isAdmin && !isComplete && (
+              lockConfirming ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontSize: 8, fontFamily: "monospace", color: C.muted }}>Lock?</span>
+                  <button onClick={() => void handleLockToggle(true)} disabled={lockLoading} style={{
+                    fontSize: 8, fontFamily: "monospace", padding: "2px 6px", borderRadius: 3,
+                    background: "#c0392b", border: "none", color: "#fff", cursor: "pointer",
+                  }}>Yes</button>
+                  <button onClick={() => setLockConfirming(false)} style={{
+                    fontSize: 8, fontFamily: "monospace", padding: "2px 6px", borderRadius: 3,
+                    background: "transparent", border: "1px solid rgba(255,255,255,0.15)",
+                    color: C.muted, cursor: "pointer",
+                  }}>No</button>
+                </div>
+              ) : locked ? (
+                <button
+                  onClick={() => void handleLockToggle(false)}
+                  disabled={lockLoading}
+                  style={{
+                    fontSize: 8, fontFamily: "monospace", padding: "2px 8px", borderRadius: 20,
+                    background: "#c0392b", border: "none",
+                    color: "#fff", cursor: lockLoading ? "not-allowed" : "pointer",
+                    letterSpacing: 0.5, opacity: lockLoading ? 0.6 : 1,
+                  }}
+                >🔒 Bets Locked</button>
+              ) : (
+                <button
+                  onClick={() => setLockConfirming(true)}
+                  disabled={lockLoading}
+                  style={{
+                    fontSize: 8, fontFamily: "monospace", padding: "2px 8px", borderRadius: 20,
+                    background: "transparent", border: "1px solid #22c55e",
+                    color: "#22c55e", cursor: lockLoading ? "not-allowed" : "pointer",
+                    letterSpacing: 0.5,
+                  }}
+                >🔓 Bets Open</button>
+              )
+            )}
+
+            {/* Status pill */}
+            {isComplete ? (
+              <span style={{
+                fontSize: 9, fontFamily: "monospace", letterSpacing: 1,
+                padding: "2px 8px", borderRadius: 20,
+                background: "#1A1508", color: C.champagne, border: `0.5px solid ${C.border2}`,
+              }}>Match Complete</span>
+            ) : bothSet ? (
+              locked ? (
+                <span style={{ fontSize: 9, fontFamily: "monospace", color: "#f97316", letterSpacing: 1 }}>🔒</span>
+              ) : (
+                <span style={{
+                  fontSize: 9, fontFamily: "monospace", letterSpacing: 1,
+                  padding: "2px 8px", borderRadius: 20,
+                  background: "#052010", color: C.live, border: "0.5px solid rgba(34,197,94,0.27)",
+                }}>● Live Odds</span>
+              )
+            ) : null}
+          </div>
         </div>
 
-        {/* Fighter row: [panel] [VS] [panel] */}
+        {/* Fighter row */}
         <div style={{ display: "flex", alignItems: "stretch" }}>
           <FighterPanel
             entrant={match.entrant1}
@@ -237,7 +320,6 @@ export default function MatchCard({ match, isAdmin, onResultEntered }: MatchCard
             hasData={match.odds?.entrant1.hasData}
             side="left"
           />
-          {/* VS divider — fixed width, never grows/shrinks */}
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,

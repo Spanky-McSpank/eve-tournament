@@ -78,19 +78,34 @@ export default async function TournamentPage({
     }
   }
 
-  // Find champion (winner of final round match)
+  // Find champion, third and fourth place
   let champion: Entrant | null = null
+  let thirdPlace: Entrant | null = null
+  let fourthPlace: Entrant | null = null
   if (t.status === "complete") {
     const { data: finalMatch } = await supabase
       .from("brackets")
       .select("winner_id")
       .eq("tournament_id", id)
       .eq("round", totalRounds)
-      .order("match_number", { ascending: true })
-      .limit(1)
+      .eq("is_third_place", false)
       .single()
     if (finalMatch?.winner_id) {
       champion = entrantList.find((e) => e.id === finalMatch.winner_id) ?? null
+    }
+    const { data: thirdPlaceMatch } = await supabase
+      .from("brackets")
+      .select("winner_id, entrant1_id, entrant2_id")
+      .eq("tournament_id", id)
+      .eq("is_third_place", true)
+      .single()
+    if (thirdPlaceMatch?.winner_id) {
+      thirdPlace = entrantList.find((e) => e.id === thirdPlaceMatch.winner_id) ?? null
+      const fourthId =
+        thirdPlaceMatch.entrant1_id === thirdPlaceMatch.winner_id
+          ? thirdPlaceMatch.entrant2_id
+          : thirdPlaceMatch.entrant1_id
+      if (fourthId) fourthPlace = entrantList.find((e) => e.id === fourthId) ?? null
     }
   }
 
@@ -137,7 +152,7 @@ export default async function TournamentPage({
         {/* Champion banner */}
         {t.status === "complete" && champion && (
           <div style={{
-            padding: 28, marginBottom: 28,
+            padding: 28, marginBottom: 16,
             border: "1px solid var(--ev-border2)",
             background: "rgba(240,192,64,0.04)", borderRadius: 10,
             display: "flex", alignItems: "center", gap: 24,
@@ -160,6 +175,54 @@ export default async function TournamentPage({
               <div style={{ marginTop: 8, fontFamily: "monospace", fontSize: "var(--font-sm)", color: "var(--ev-muted)" }}>
                 {Math.round(champion.efficiency * 100)}% efficiency · {champion.kills_30d}K / {champion.losses_30d}L
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Third place banner */}
+        {t.status === "complete" && thirdPlace && (
+          <div style={{
+            padding: "18px 24px", marginBottom: 10,
+            border: "1px solid rgba(205,127,50,0.35)",
+            background: "rgba(205,127,50,0.03)", borderRadius: 10,
+            display: "flex", alignItems: "center", gap: 20,
+          }}>
+            <div style={{ borderRadius: "50%", overflow: "hidden", width: "clamp(64px,5vw,96px)", height: "clamp(64px,5vw,96px)", flexShrink: 0 }}>
+              {thirdPlace.portrait_url
+                ? <Image src={thirdPlace.portrait_url} alt={thirdPlace.character_name} width={96} height={96}
+                    style={{ borderRadius: "50%", objectFit: "cover", width: "100%", height: "100%" }} />
+                : <CapsuleerIcon size={80} />
+              }
+            </div>
+            <div>
+              <div style={{ color: "#CD7F32", fontSize: "var(--font-sm)", fontFamily: "monospace", letterSpacing: 2, marginBottom: 4 }}>
+                🥉 3RD PLACE
+              </div>
+              <div style={{ color: "#CD7F32", fontSize: "var(--font-xl)", fontWeight: 700 }}>{thirdPlace.character_name}</div>
+              {thirdPlace.corporation_name && (
+                <div style={{ color: "var(--ev-muted)", fontSize: "var(--font-sm)", marginTop: 3 }}>{thirdPlace.corporation_name}</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Fourth place */}
+        {t.status === "complete" && fourthPlace && (
+          <div style={{
+            padding: "10px 20px", marginBottom: 28,
+            background: "rgba(255,255,255,0.02)", borderRadius: 8,
+            border: "0.5px solid rgba(255,255,255,0.06)",
+            display: "flex", alignItems: "center", gap: 12,
+          }}>
+            <div style={{ borderRadius: "50%", overflow: "hidden", width: 40, height: 40, flexShrink: 0, opacity: 0.6 }}>
+              {fourthPlace.portrait_url
+                ? <Image src={fourthPlace.portrait_url} alt={fourthPlace.character_name} width={40} height={40}
+                    style={{ borderRadius: "50%", objectFit: "cover" }} />
+                : <CapsuleerIcon size={40} />
+              }
+            </div>
+            <div style={{ color: "var(--ev-muted)", fontSize: "var(--font-sm)", fontFamily: "monospace" }}>
+              4th Place: {fourthPlace.character_name}
             </div>
           </div>
         )}

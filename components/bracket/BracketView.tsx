@@ -58,12 +58,20 @@ export default function BracketView({ initialBrackets, tournamentId, isAdmin }: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournamentId])
 
+  // Separate third place match from regular matches
+  const thirdPlaceMatch = useMemo(
+    () => brackets.find((b) => b.is_third_place) ?? null,
+    [brackets]
+  )
+
   const roundGroups = useMemo(() => {
-    const maxRound = brackets.reduce((max, b) => Math.max(max, b.round), 0)
+    // Exclude third place match from the normal round grouping
+    const regular = brackets.filter((b) => !b.is_third_place)
+    const maxRound = regular.reduce((max, b) => Math.max(max, b.round), 0)
     const groups: BracketWithEntrants[][] = []
     for (let r = 1; r <= maxRound; r++) {
       groups.push(
-        brackets
+        regular
           .filter((b) => b.round === r)
           .sort((a, b) => a.match_number - b.match_number)
       )
@@ -112,6 +120,7 @@ export default function BracketView({ initialBrackets, tournamentId, isAdmin }: 
                 isAdmin={isAdmin}
                 flashedIds={flashedIds}
                 onResultEntered={() => { void refetch() }}
+                thirdPlaceMatch={idx + 1 === totalRounds ? (thirdPlaceMatch ?? undefined) : undefined}
               />
               {idx < roundGroups.length - 1 && (
                 <BracketConnector matchCount={roundMatches.length} />

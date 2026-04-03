@@ -1,3 +1,6 @@
+// NOTE: Run in Supabase SQL Editor before using third-place match features:
+// ALTER TABLE brackets ADD COLUMN IF NOT EXISTS is_third_place BOOLEAN DEFAULT FALSE;
+
 import { createSupabaseServerClient } from './supabase'
 import { calculateOdds, MatchOdds } from './odds'
 
@@ -29,6 +32,7 @@ export type Bracket = {
   entrant2_id: string | null
   winner_id: string | null
   is_bye: boolean
+  is_third_place: boolean
   locked: boolean
   killmail_id: number | null
   killmail_url: string | null
@@ -84,6 +88,7 @@ export async function generateBracket(
     entrant2_id: string | null
     winner_id: string | null
     is_bye: boolean
+    is_third_place?: boolean
     completed_at: string | null
   }
 
@@ -135,6 +140,21 @@ export async function generateBracket(
     }
   }
 
+  // Third place match — same round as the final, match_number 0
+  if (entrantCount >= 4) {
+    allMatches.push({
+      tournament_id: tournamentId,
+      round: totalRounds,
+      match_number: 0,
+      entrant1_id: null,
+      entrant2_id: null,
+      winner_id: null,
+      is_bye: false,
+      is_third_place: true,
+      completed_at: null,
+    })
+  }
+
   const { error: bracketError } = await supabase.from('brackets').insert(allMatches)
   if (bracketError) throw new Error('Failed to insert brackets: ' + bracketError.message)
 
@@ -168,6 +188,8 @@ export async function advanceWinner(
 
   if (fetchError || !bracket) throw new Error('Bracket not found')
 
+  const isThirdPlace = (bracket.is_third_place as boolean) ?? false
+
   const updateData: Record<string, unknown> = {
     winner_id: winnerId,
     completed_at: new Date().toISOString(),
@@ -186,25 +208,62 @@ export async function advanceWinner(
     .eq('id', bracketId)
   if (updateError) throw new Error('Failed to update bracket: ' + updateError.message)
 
-  const nextRound = (bracket.round as number) + 1
-  const nextMatchNumber = Math.ceil((bracket.match_number as number) / 2)
-  const isOdd = (bracket.match_number as number) % 2 !== 0
-
-  const { data: nextBracket } = await supabase
+  // Find totalRounds for this tournament (excluding third-place match doesn't inflate max)
+  const { data: maxRoundRow } = await supabase
     .from('brackets')
-    .select('id')
-    .eq('tournament_id', bracket.tournament_id)
-    .eq('round', nextRound)
-    .eq('match_number', nextMatchNumber)
+    .select('round')
+    .eq('tournament_id', bracket.tournament_id as string)
+    .order('round', { ascending: false })
+    .limit(1)
     .single()
+  const totalRounds = (maxRoundRow?.round as number) ?? (bracket.round as number)
 
-  if (nextBracket) {
-    const slotUpdate = isOdd ? { entrant1_id: winnerId } : { entrant2_id: winnerId }
-    await supabase.from('brackets').update(slotUpdate).eq('id', nextBracket.id)
+  // Advance winner to next round (skip for third-place match — no next round)
+  if (!isThirdPlace) {
+    const nextRound = (bracket.round as number) + 1
+    const nextMatchNumber = Math.ceil((bracket.match_number as number) / 2)
+    const isOdd = (bracket.match_number as number) % 2 !== 0
+
+    const { data: nextBracket } = await supabase
+      .from('brackets')
+      .select('id')
+      .eq('tournament_id', bracket.tournament_id)
+      .eq('round', nextRound)
+      .eq('match_number', nextMatchNumber)
+      .eq('is_third_place', false)
+      .single()
+
+    if (nextBracket) {
+      const slotUpdate = isOdd ? { entrant1_id: winnerId } : { entrant2_id: winnerId }
+      await supabase.from('brackets').update(slotUpdate).eq('id', nextBracket.id)
+    }
+
+    // If semifinal: advance LOSER to third place match
+    if ((bracket.round as number) === totalRounds - 1 && totalRounds >= 3) {
+      const loserId =
+        (bracket.entrant1_id as string) === winnerId
+          ? (bracket.entrant2_id as string)
+          : (bracket.entrant1_id as string)
+
+      if (loserId) {
+        const { data: thirdPlaceBracket } = await supabase
+          .from('brackets')
+          .select('id, entrant1_id, entrant2_id')
+          .eq('tournament_id', bracket.tournament_id as string)
+          .eq('is_third_place', true)
+          .single()
+
+        if (thirdPlaceBracket) {
+          const slot = thirdPlaceBracket.entrant1_id === null ? 'entrant1_id' : 'entrant2_id'
+          await supabase.from('brackets').update({ [slot]: loserId }).eq('id', thirdPlaceBracket.id as string)
+        }
+      }
+    }
   }
 
   await resolveMatchBets(bracketId, winnerId)
 
+  // Check if all matches in this round are complete
   const { data: roundBrackets } = await supabase
     .from('brackets')
     .select('id, winner_id')
@@ -218,7 +277,8 @@ export async function advanceWinner(
       bracket.tournament_id as string,
       bracket.round as number
     )
-    if (roundBrackets?.length === 1) {
+    // Tournament complete when the final round (which includes final + third place) all have winners
+    if ((bracket.round as number) === totalRounds) {
       await supabase
         .from('tournaments')
         .update({ status: 'complete', updated_at: new Date().toISOString() })
@@ -536,6 +596,7 @@ export async function getTournamentBracket(
       round: bracket.round as number,
       match_number: bracket.match_number as number,
       is_bye: bracket.is_bye as boolean,
+      is_third_place: (bracket.is_third_place as boolean) ?? false,
       locked: (bracket.locked as boolean) ?? false,
       killmail_id: bracket.killmail_id as number | null,
       killmail_url: bracket.killmail_url as string | null,

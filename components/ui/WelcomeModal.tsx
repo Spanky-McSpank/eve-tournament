@@ -124,7 +124,9 @@ export default function WelcomeModal({ onClose }: WelcomeModalProps) {
             Try not to lose all your ISK on the first round.<br />
             Good luck. You&apos;ll need it.<br />
             <br />
-            <span style={{ color: "var(--ev-muted)" }}>— The Management</span>
+            <span style={{ color: "var(--ev-muted)" }}>— The Management</span><br />
+            <br />
+            <span style={{ color: "var(--ev-muted)" }}>P.S. We know about the bees.</span>
           </div>
 
           {/* CTA */}
@@ -144,7 +146,7 @@ export default function WelcomeModal({ onClose }: WelcomeModalProps) {
               boxShadow: "0 4px 16px rgba(240,192,64,0.3)",
             }}
           >
-            LET&apos;S GO ⚔
+            LET&apos;S GO ⚔ 🐝
           </button>
         </div>
       </div>

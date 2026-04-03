@@ -22,10 +22,11 @@ export interface BracketColumnProps {
   isAdmin: boolean
   flashedIds: Set<string>
   onResultEntered: () => void
+  thirdPlaceMatch?: BracketWithEntrants
 }
 
 export default function BracketColumn({
-  matches, round, totalRounds, isAdmin, flashedIds, onResultEntered,
+  matches, round, totalRounds, isAdmin, flashedIds, onResultEntered, thirdPlaceMatch,
 }: BracketColumnProps) {
   const label = getRoundLabel(round, totalRounds)
 
@@ -60,6 +61,33 @@ export default function BracketColumn({
             <MatchCard match={match} isAdmin={isAdmin} onResultEntered={onResultEntered} />
           </div>
         ))}
+
+        {/* Third place match — rendered below the final with a divider */}
+        {thirdPlaceMatch && (
+          <>
+            <div style={{
+              width: "100%", margin: "16px 0 10px",
+              display: "flex", alignItems: "center", gap: 10,
+            }}>
+              <div style={{ flex: 1, height: "0.5px", background: "linear-gradient(90deg, transparent, rgba(240,192,64,0.3))" }} />
+              <span style={{ fontSize: 9, fontFamily: "monospace", color: "#f59e0b", letterSpacing: 2, whiteSpace: "nowrap" }}>
+                · 3RD PLACE MATCH ·
+              </span>
+              <div style={{ flex: 1, height: "0.5px", background: "linear-gradient(90deg, rgba(240,192,64,0.3), transparent)" }} />
+            </div>
+            <div
+              className={flashedIds.has(thirdPlaceMatch.id) ? "eve-flash" : undefined}
+              style={{ padding: "4px 0", width: "100%" }}
+            >
+              <MatchCard
+                match={thirdPlaceMatch}
+                isAdmin={isAdmin}
+                onResultEntered={onResultEntered}
+                isThirdPlace
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

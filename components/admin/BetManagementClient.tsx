@@ -35,6 +35,7 @@ interface Proposal {
   predicted_winner_id: string | null
   bracket_round: number | null
   bracket_match_number: number | null
+  bracket_locked: boolean
   predicted_winner_name: string | null
   predicted_winner_portrait: string | null
 }
@@ -276,6 +277,21 @@ export default function BetManagementClient({
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [lockingBracketId, setLockingBracketId] = useState<string | null>(null)
+
+  async function handleBracketLock(bracketId: string, locked: boolean) {
+    setLockingBracketId(bracketId)
+    try {
+      await fetch(`/api/admin/bracket/${bracketId}/lock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locked }),
+      })
+      setRefreshKey((k) => k + 1)
+    } finally {
+      setLockingBracketId(null)
+    }
+  }
 
   // Modals
   const [editProposal, setEditProposal] = useState<{ proposal: Proposal; defaultTab: "edit" | "void" } | null>(null)
@@ -432,7 +448,7 @@ export default function BetManagementClient({
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: "monospace" }}>
               <thead>
                 <tr style={{ color: "var(--ev-muted)", fontSize: 9, letterSpacing: 1, textTransform: "uppercase" }}>
-                  {["Match", "Proposer", "Backs", "P.Stake", "Acceptor", "Backs", "A.Stake", "Status", "Actions"].map((h) => (
+                  {["Match", "Lock", "Proposer", "Backs", "P.Stake", "Acceptor", "Backs", "A.Stake", "Status", "Actions"].map((h) => (
                     <th key={h} style={{ textAlign: "left", padding: "6px 10px", borderBottom: "0.5px solid rgba(255,255,255,0.07)", fontWeight: 400 }}>{h}</th>
                   ))}
                 </tr>
@@ -444,6 +460,23 @@ export default function BetManagementClient({
                     <tr key={p.id} style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}>
                       <td style={{ padding: "8px 10px", color: "var(--ev-muted)", whiteSpace: "nowrap" }}>
                         {p.bracket_round != null ? `R${p.bracket_round}·M${p.bracket_match_number}` : "—"}
+                      </td>
+                      <td style={{ padding: "8px 10px" }}>
+                        {p.bracket_id ? (
+                          <button
+                            onClick={() => void handleBracketLock(p.bracket_id!, !p.bracket_locked)}
+                            disabled={lockingBracketId === p.bracket_id}
+                            style={{
+                              fontSize: 9, fontFamily: "monospace", padding: "2px 8px", borderRadius: 20,
+                              background: p.bracket_locked ? "#c0392b" : "transparent",
+                              border: p.bracket_locked ? "none" : "1px solid #22c55e",
+                              color: p.bracket_locked ? "#fff" : "#22c55e",
+                              cursor: lockingBracketId === p.bracket_id ? "not-allowed" : "pointer",
+                              opacity: lockingBracketId === p.bracket_id ? 0.5 : 1,
+                              whiteSpace: "nowrap",
+                            }}
+                          >{p.bracket_locked ? "🔒" : "🔓"}</button>
+                        ) : <span style={{ color: "#444", fontSize: 9 }}>—</span>}
                       </td>
                       <td style={{ padding: "8px 10px" }}>
                         <CharacterCell

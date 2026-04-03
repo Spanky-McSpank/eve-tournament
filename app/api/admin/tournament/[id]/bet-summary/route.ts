@@ -45,8 +45,8 @@ export async function GET(
 
   const [{ data: brackets }, { data: entrantRows }] = await Promise.all([
     bracketIds.length > 0
-      ? supabase.from("brackets").select("id, round, match_number").in("id", bracketIds)
-      : Promise.resolve({ data: [] as Array<{ id: string; round: number; match_number: number }> }),
+      ? supabase.from("brackets").select("id, round, match_number, locked").in("id", bracketIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; round: number; match_number: number; locked: boolean }> }),
     entrantIds.length > 0
       ? supabase.from("entrants").select("id, character_name, portrait_url").in("id", entrantIds)
       : Promise.resolve({ data: [] as Array<{ id: string; character_name: string; portrait_url: string | null }> }),
@@ -59,6 +59,7 @@ export async function GET(
     ...p,
     bracket_round: (bracketMap[p.bracket_id as string] as { round?: number } | undefined)?.round ?? null,
     bracket_match_number: (bracketMap[p.bracket_id as string] as { match_number?: number } | undefined)?.match_number ?? null,
+    bracket_locked: (bracketMap[p.bracket_id as string] as { locked?: boolean } | undefined)?.locked ?? false,
     predicted_winner_name: (entrantMap[p.predicted_winner_id as string] as { character_name?: string } | undefined)?.character_name ?? null,
     predicted_winner_portrait: (entrantMap[p.predicted_winner_id as string] as { portrait_url?: string | null } | undefined)?.portrait_url ?? null,
   }))
