@@ -755,6 +755,16 @@ export default function CommandCenterClient({
 
   // ── API helpers ──────────────────────────────────────────────────────────
 
+  const refetchBrackets = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/tournament/${tournament.id}/bracket`)
+      if (!res.ok) return
+      const data = await res.json() as { brackets: BracketFull[] }
+      setBrackets(data.brackets)
+      setLocalStatuses(new Map())
+    } catch { /* non-critical — realtime will sync */ }
+  }, [tournament.id])
+
   const handleStatusChange = useCallback(async (bracketId: string, status: MatchStatus) => {
     setLocalStatuses((prev) => new Map(prev).set(bracketId, status))
     // Update match_status in DB (requires schema migration)
@@ -773,7 +783,11 @@ export default function CommandCenterClient({
   }, [brackets])
 
   const handleResultSubmit = useCallback(async (bracketId: string, winnerId: string, killmailUrl: string) => {
-    console.log('Submitting result:', { bracketId, winnerId, killmailUrl, tournamentId: tournament.id })
+    console.log('Submitting result to API:', {
+      url: `/api/tournament/${tournament.id}/advance`,
+      bracketId,
+      winnerId,
+    })
     const res = await fetch(`/api/tournament/${tournament.id}/advance`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -783,16 +797,9 @@ export default function CommandCenterClient({
       const d = await res.json() as { error?: string }
       throw new Error(d.error ?? "Failed to set result")
     }
-    // Update local bracket state
-    setBrackets((prev) =>
-      prev.map((b) =>
-        b.id === bracketId
-          ? { ...b, winner_id: winnerId, winner: entrants.find((e) => e.id === winnerId) ?? null, killmail_url: killmailUrl || null }
-          : b
-      )
-    )
-    setLocalStatuses((prev) => new Map(prev).set(bracketId, "complete"))
-  }, [entrants, tournament.id])
+    // Refetch from server — round advancement happens server-side in advanceWinner
+    await refetchBrackets()
+  }, [tournament.id, refetchBrackets])
 
   const handleForfeit = useCallback(async (bracketId: string, loserId: string) => {
     const b = brackets.find((br) => br.id === bracketId)
@@ -911,15 +918,6 @@ export default function CommandCenterClient({
     }
   }, [tournament.id, drawType])
 
-  const handleAdvanceRound = useCallback(async () => {
-    if (!confirm(`All round ${selectedRound} matches complete. Advance to round ${selectedRound + 1}?`)) return
-    const res = await fetch(`/api/admin/tournament/${tournament.id}/update`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ current_round: selectedRound + 1 }),
-    })
-    if (res.ok) setSelectedRound(selectedRound + 1)
-  }, [selectedRound, tournament.id])
 
   const handleSaveSettings = useCallback(async () => {
     setSettingsLoading(true)
@@ -1179,18 +1177,12 @@ export default function CommandCenterClient({
                     </div>
                   ))}
 
-                  {/* Advance round button */}
+                  {/* Round complete indicator */}
                   {roundComplete && selectedRound < totalRounds && (
-                    <div style={{ marginTop: 16, padding: 16, background: "rgba(34,197,94,0.06)", border: "1px solid #22c55e44", borderRadius: 8 }}>
-                      <div style={{ fontSize: 12, color: "#22c55e", fontFamily: "monospace", marginBottom: 10 }}>
-                        ✓ All Round {selectedRound} matches complete.
+                    <div style={{ marginTop: 16, padding: "10px 16px", background: "rgba(34,197,94,0.06)", border: "1px solid #22c55e44", borderRadius: 8 }}>
+                      <div style={{ fontSize: 12, color: "#22c55e", fontFamily: "monospace" }}>
+                        ✓ All Round {selectedRound} matches complete — next round ready
                       </div>
-                      <button
-                        onClick={handleAdvanceRound}
-                        style={{ background: "#22c55e", border: "none", borderRadius: 6, padding: "9px 20px", fontFamily: "monospace", fontWeight: 700, fontSize: 12, cursor: "pointer", color: "#080500" }}
-                      >
-                        Advance to Round {selectedRound + 1} →
-                      </button>
                     </div>
                   )}
                 </div>
