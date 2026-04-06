@@ -627,10 +627,21 @@ export default function CommandCenterClient({
   const [entrants, setEntrants] = useState<EntrantFull[]>(initialEntrants as unknown as EntrantFull[])
   const [brackets, setBrackets] = useState<BracketFull[]>(initialBrackets as unknown as BracketFull[])
 
-  // Match queue state
-  const [activeTab, setActiveTab] = useState<"queue" | "roster" | "betting" | "settings">(
-    tournament.status === "registration" ? "roster" : "queue"
-  )
+  // Match queue state — reads initial tab from URL hash
+  function tabFromHash(): "queue" | "roster" | "betting" | "settings" {
+    if (typeof window === "undefined") return tournament.status === "registration" ? "roster" : "queue"
+    const h = window.location.hash.replace("#", "")
+    if (h === "roster" || h === "betting" || h === "settings" || h === "queue") return h
+    return tournament.status === "registration" ? "roster" : "queue"
+  }
+  const [activeTab, setActiveTab] = useState<"queue" | "roster" | "betting" | "settings">(tabFromHash)
+
+  function changeTab(tab: "queue" | "roster" | "betting" | "settings") {
+    setActiveTab(tab)
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `#${tab}`)
+    }
+  }
   const [selectedRound, setSelectedRound] = useState(tournament.current_round ?? 1)
   const [localStatuses, setLocalStatuses] = useState<Map<string, MatchStatus>>(new Map())
   const [selectedBracketId, setSelectedBracketId] = useState<string | null>(null)
@@ -815,8 +826,8 @@ export default function CommandCenterClient({
     setAddSuccess(null)
     try {
       const body = addMode === "esi"
-        ? { character_name: addName, tournament_id: tournament.id }
-        : { character_name: addName, character_id: parseInt(addManualId), tournament_id: tournament.id, manual: true }
+        ? { characterName: addName, tournamentId: tournament.id }
+        : { characterName: addName, characterId: parseInt(addManualId), tournamentId: tournament.id, manual: true }
       const res = await fetch("/api/admin/entrant/search-add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -824,10 +835,12 @@ export default function CommandCenterClient({
       })
       const d = await res.json() as { entrant?: EntrantFull; error?: string }
       if (!res.ok) throw new Error(d.error ?? "Failed")
+      const addedName = addName
       if (d.entrant) setEntrants((prev) => [...prev, d.entrant!])
-      setAddSuccess(`${addName} added!`)
       setAddName("")
       setAddManualId("")
+      setAddSuccess(`✓ ${addedName} added`)
+      setTimeout(() => setAddSuccess(null), 2000)
     } catch (e: unknown) {
       setAddError(e instanceof Error ? e.message : "Failed")
     } finally {
@@ -1062,14 +1075,12 @@ export default function CommandCenterClient({
         )}
       </div>
 
-      {/* TABS */}
+      {/* TABS — always show all 4 */}
       <div style={{ borderBottom: "1px solid rgba(200,150,12,0.2)", padding: "0 24px", maxWidth: 1400, margin: "0 auto", display: "flex", gap: 0, overflowX: "auto" }}>
-        {tournament.status === "active" && (
-          <button style={tabStyle("queue")} onClick={() => setActiveTab("queue")}>⚔ MATCH QUEUE</button>
-        )}
-        <button style={tabStyle("roster")} onClick={() => setActiveTab("roster")}>👥 ROSTER</button>
-        <button style={tabStyle("betting")} onClick={() => setActiveTab("betting")}>🎲 BETTING</button>
-        <button style={tabStyle("settings")} onClick={() => setActiveTab("settings")}>⚙ SETTINGS</button>
+        <button style={tabStyle("queue")} onClick={() => changeTab("queue")}>⚔ MATCH QUEUE</button>
+        <button style={tabStyle("roster")} onClick={() => changeTab("roster")}>👥 ROSTER</button>
+        <button style={tabStyle("betting")} onClick={() => changeTab("betting")}>🎲 BETTING</button>
+        <button style={tabStyle("settings")} onClick={() => changeTab("settings")}>⚙ SETTINGS</button>
       </div>
 
       <div style={{ padding: "24px", maxWidth: 1400, margin: "0 auto" }}>
@@ -1083,7 +1094,7 @@ export default function CommandCenterClient({
                   Tournament is in {tournament.status} state. Generate a bracket to start.
                 </div>
                 {tournament.status === "registration" && (
-                  <button onClick={() => setActiveTab("roster")} style={{ background: "var(--ev-gold)", border: "none", borderRadius: 8, padding: "12px 28px", fontFamily: "monospace", fontWeight: 700, fontSize: 14, cursor: "pointer", color: "#080500" }}>
+                  <button onClick={() => changeTab("roster")} style={{ background: "var(--ev-gold)", border: "none", borderRadius: 8, padding: "12px 28px", fontFamily: "monospace", fontWeight: 700, fontSize: 14, cursor: "pointer", color: "#080500" }}>
                     ⚔ Go to Roster Builder
                   </button>
                 )}

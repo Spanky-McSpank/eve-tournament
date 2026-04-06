@@ -13,7 +13,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = getSessionCharacter(request)
-  if (!session?.isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!session?.isAdmin) return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
   const { id: bracketId } = await params
 
   let body: { match_status: string }

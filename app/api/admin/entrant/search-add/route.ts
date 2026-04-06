@@ -21,7 +21,7 @@ async function fetchCorpName(corporationId: number): Promise<string | null> {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!isAdminRequest(request)) return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
 
   let body: Record<string, unknown>
   try { body = (await request.json()) as Record<string, unknown> }
@@ -49,19 +49,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Tournament is not open for registration" }, { status: 409 })
   }
 
-  // Search ESI
-  const searchResult = await searchCharacterByName(characterName.trim())
-  if (!searchResult) {
-    return NextResponse.json({ error: `Character "${characterName}" not found` }, { status: 404 })
+  // Manual add (characterId provided directly, skip ESI name search)
+  const isManual = body.manual === true && body.characterId !== undefined
+  let characterId: number
+
+  if (isManual) {
+    characterId = Number(body.characterId)
+    if (!characterId || isNaN(characterId)) {
+      return NextResponse.json({ error: "characterId must be a valid number for manual add" }, { status: 400 })
+    }
+  } else {
+    // Search ESI by name
+    const searchResult = await searchCharacterByName(characterName.trim())
+    if (!searchResult) {
+      return NextResponse.json({ error: `Character "${characterName}" not found on ESI` }, { status: 404 })
+    }
+    characterId = searchResult.character_id
   }
 
   const [publicInfo, portrait, stats] = await Promise.all([
-    getCharacterPublicInfo(searchResult.character_id),
-    getCharacterPortrait(searchResult.character_id),
-    getKillboardStats(searchResult.character_id),
+    getCharacterPublicInfo(characterId).catch(() => null),
+    getCharacterPortrait(characterId).catch(() => ({ px64x64: null, px128x128: null, px256x256: null, px512x512: null })),
+    getKillboardStats(characterId),
   ])
 
-  const corpName = await fetchCorpName(publicInfo.corporation_id)
+  const corpName = publicInfo ? await fetchCorpName(publicInfo.corporation_id) : null
+  const resolvedName = publicInfo?.name ?? characterName.trim()
   const totalISK = stats.isk_destroyed_30d + stats.isk_lost_30d
   const efficiency = totalISK > 0 ? stats.isk_destroyed_30d / totalISK : 0
 
@@ -69,8 +82,8 @@ export async function POST(request: NextRequest) {
     .from("entrants")
     .insert({
       tournament_id: tournamentId,
-      character_id: searchResult.character_id,
-      character_name: searchResult.character_name,
+      character_id: characterId,
+      character_name: resolvedName,
       corporation_name: corpName,
       portrait_url: portrait.px64x64,
       kills_30d: stats.kills_30d,

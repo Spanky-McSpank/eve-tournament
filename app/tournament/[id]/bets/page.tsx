@@ -6,7 +6,6 @@ import { createSupabaseClient } from "@/lib/supabase"
 import type { BracketWithEntrants } from "@/lib/bracket"
 import { formatISK } from "@/lib/utils"
 import OddsCard from "@/components/bookie/OddsCard"
-import AdminBackButton from "@/components/admin/AdminBackButton"
 import RecordBoard from "@/components/bookie/RecordBoard"
 import SettlementBoard from "@/components/bookie/SettlementBoard"
 import PropsBoard from "@/components/bookie/PropsBoard"
@@ -129,9 +128,8 @@ export default function BetsPage({ params }: { params: Promise<{ id: string }> }
           {tournament?.name ?? "…"} — Bookie Board 🎲
         </h1>
         <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
-          {me.isAdmin && <AdminBackButton />}
           {me.isAdmin && (
-            <Link href={`/admin/tournament/${id}/bets`} style={{
+            <Link href={`/admin/tournament/${id}#betting`} style={{
               fontSize: 12, color: "#f59e0b", textDecoration: "none",
               padding: "5px 12px", border: "1px solid rgba(245,158,11,0.3)",
               borderRadius: 4, fontFamily: "monospace",

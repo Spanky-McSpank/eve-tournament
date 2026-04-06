@@ -21,7 +21,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; settlementId: string }> }
 ) {
-  if (!getAdmin(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!getAdmin(request)) return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
   const { id: tournamentId, settlementId } = await params
   const supabase = createSupabaseServerClient()
 

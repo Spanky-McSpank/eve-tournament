@@ -6,7 +6,7 @@ import { isAdminRequest } from "@/lib/auth"
 // Body: { bracketId1, slot1 ("entrant1"|"entrant2"), bracketId2, slot2 ("entrant1"|"entrant2") }
 // Neither bracket may have a winner.
 export async function POST(request: NextRequest) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!isAdminRequest(request)) return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
 
   let body: Record<string, unknown>
   try { body = await request.json() as Record<string, unknown> }

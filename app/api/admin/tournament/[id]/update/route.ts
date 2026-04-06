@@ -18,7 +18,7 @@ export async function POST(
 ) {
   const session = getSessionCharacter(request)
   console.log("[admin/tournament/update] session:", JSON.stringify(session), "isAdmin:", session?.isAdmin)
-  if (!session?.isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!session?.isAdmin) return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
   const { id } = await params
 
   let body: Record<string, unknown>

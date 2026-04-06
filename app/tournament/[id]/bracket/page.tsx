@@ -5,7 +5,6 @@ import Link from "next/link"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { getTournamentBracket } from "@/lib/bracket"
 import BracketView from "@/components/bracket/BracketView"
-import AdminBackButton from "@/components/admin/AdminBackButton"
 import TournamentRulesCard from "@/components/tournament/TournamentRulesCard"
 
 interface EveSession {
@@ -122,7 +121,13 @@ export default async function BracketPage({
           ⚔ {entrantCount > 0 ? entrantCount : t.entrant_count} Entrants
         </span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
-          {isAdmin && <AdminBackButton />}
+          {isAdmin && (
+            <Link href={`/admin/tournament/${id}`} style={{
+              fontSize: 12, color: "var(--ev-champagne)", textDecoration: "none",
+              padding: "5px 12px", border: "1px solid rgba(200,150,12,0.4)",
+              borderRadius: 4, fontFamily: "monospace",
+            }}>⚙ Command Center</Link>
+          )}
           <Link href={`/tournament/${id}/bets`} style={{
             fontSize: 12, color: "var(--ev-text)", textDecoration: "none",
             padding: "5px 12px", border: "1px solid rgba(255,255,255,0.12)",
@@ -135,7 +140,7 @@ export default async function BracketPage({
             padding: "5px 12px", border: "1px solid rgba(255,255,255,0.12)",
             borderRadius: 4, fontFamily: "monospace",
           }}>
-            ← Roster
+            ← Tournament
           </Link>
         </div>
       </div>

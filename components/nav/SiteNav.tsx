@@ -1,10 +1,20 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { useEveAuth } from "@/hooks/useEveAuth"
 import EveLoginButton from "@/components/ui/EveLoginButton"
+
+// Extract tournament ID from pathname patterns:
+//   /tournament/[id]
+//   /tournament/[id]/bracket
+//   /admin/tournament/[id]
+//   /admin/tournament/[id]/bets
+function extractTournamentId(pathname: string): string | null {
+  const m = pathname.match(/\/(?:admin\/)?tournament\/([^/]+)/)
+  return m?.[1] ?? null
+}
 
 function useTournamentName(tournamentId: string | null): string | null {
   const [name, setName] = useState<string | null>(null)
@@ -63,13 +73,11 @@ function DropdownItem({
 
 export default function SiteNav() {
   const pathname = usePathname()
-  const params = useParams()
   const { isAdmin } = useEveAuth()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropRef = useRef<HTMLDivElement>(null)
 
-  // Extract tournament ID when on any /tournament/[id] or /admin/tournament/[id] route
-  const tournamentId = (params?.id as string) ?? null
+  const tournamentId = extractTournamentId(pathname ?? "")
   const tournamentName = useTournamentName(tournamentId)
 
   // Close dropdown on outside click or Escape
@@ -90,9 +98,10 @@ export default function SiteNav() {
     }
   }, [])
 
-  // Build context breadcrumb
+  // Build context breadcrumb (only for public-facing tournament pages)
   let breadcrumb: React.ReactNode = null
-  if (tournamentId && tournamentName) {
+  const isAdminPath = pathname?.startsWith("/admin")
+  if (tournamentId && tournamentName && !isAdminPath) {
     const onBracket = pathname?.includes("/bracket")
     const onBets = pathname?.includes("/bets")
     const onStats = pathname?.includes("/stats")
@@ -230,7 +239,7 @@ export default function SiteNav() {
                     />
                   </>
                 )}
-                <DropdownItem href="/admin#create" onClick={() => setDropdownOpen(false)}>
+                <DropdownItem href="/admin" onClick={() => setDropdownOpen(false)}>
                   ➕ New Tournament
                 </DropdownItem>
               </div>

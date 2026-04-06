@@ -329,9 +329,10 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
       const data = await res.json() as { tournament?: Tournament; error?: string }
       if (!res.ok) { setCreateError(data.error ?? "Failed to create tournament"); return }
       setCreateName("")
-      router.refresh()
       if (data.tournament) {
-        setTournaments((prev) => [{ ...data.tournament!, currentEntrants: 0 }, ...prev])
+        router.push(`/admin/tournament/${data.tournament.id}`)
+      } else {
+        router.refresh()
       }
     } catch (e) {
       setCreateError(e instanceof Error ? e.message : "Unknown error")

@@ -6,7 +6,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!isAdminRequest(request)) return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
 
   const { id } = await params
   const supabase = createSupabaseServerClient()

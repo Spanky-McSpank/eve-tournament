@@ -33,7 +33,7 @@ export async function POST(
     .filter(Boolean)
 
   if (!adminIds.includes(String(session.character_id))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
   }
 
   let body: Record<string, unknown>

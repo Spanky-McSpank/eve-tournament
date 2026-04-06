@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase"
 import { isAdminRequest } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!isAdminRequest(request)) return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
 
   let body: Record<string, unknown>
   try { body = await request.json() as Record<string, unknown> }

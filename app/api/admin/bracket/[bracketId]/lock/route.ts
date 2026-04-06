@@ -9,7 +9,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ bracketId: string }> }
 ) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!isAdminRequest(request)) return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
   const { bracketId } = await params
 
   let body: Record<string, unknown>

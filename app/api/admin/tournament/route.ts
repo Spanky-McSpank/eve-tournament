@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase"
 import { isAdminRequest } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (!isAdminRequest(request)) return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
 
   let body: Record<string, unknown>
   try { body = (await request.json()) as Record<string, unknown> }
@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
   if (!name || typeof name !== "string" || !name.trim()) {
     return NextResponse.json({ error: "name is required" }, { status: 400 })
   }
-  if (![16, 32, 64].includes(Number(entrantCount))) {
-    return NextResponse.json({ error: "entrantCount must be 16, 32, or 64" }, { status: 400 })
+  if (![4, 6, 8, 10, 12, 16, 24, 32, 48, 64].includes(Number(entrantCount))) {
+    return NextResponse.json({ error: "entrantCount must be one of: 4, 6, 8, 10, 12, 16, 24, 32, 48, 64" }, { status: 400 })
   }
 
   const supabase = createSupabaseServerClient()
