@@ -6,9 +6,7 @@ import TermsGate from "@/components/ui/TermsGate"
 export default function TermsGateWrapper({ children }: { children: React.ReactNode }) {
   const { hasAccepted, acceptTerms } = useTermsAccepted()
 
-  if (!hasAccepted) {
-    return <TermsGate onAccept={acceptTerms} />
-  }
-
+  if (hasAccepted === null) return null
+  if (!hasAccepted) return <TermsGate onAccept={acceptTerms} />
   return <>{children}</>
 }

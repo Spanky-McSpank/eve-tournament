@@ -218,13 +218,23 @@ export default function HomePage() {
         )}
 
         {!authLoading && isAdmin && (
-          <div style={{ textAlign: "center", marginTop: 52 }}>
+          <div style={{ textAlign: "center", marginTop: 52, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
             <Link href="/admin" style={{
               fontSize: 10, color: "var(--ev-muted)", fontFamily: "monospace",
               textDecoration: "none", letterSpacing: 2,
               padding: "4px 12px", border: "0.5px solid var(--ev-border2)",
               borderRadius: 4,
             }}>ADMIN PANEL</Link>
+            <button
+              onClick={() => { localStorage.removeItem('terms_accepted_v1'); window.location.reload() }}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                fontSize: 10, color: "#333", fontFamily: "monospace",
+                letterSpacing: 1, padding: 0,
+              }}
+            >
+              Reset Terms (Admin Testing)
+            </button>
           </div>
         )}
       </div>
