@@ -773,11 +773,11 @@ export default function CommandCenterClient({
   }, [brackets])
 
   const handleResultSubmit = useCallback(async (bracketId: string, winnerId: string, killmailUrl: string) => {
-    console.log('Submitting result:', { bracketId, winnerId, killmailUrl })
-    const res = await fetch(`/api/admin/bracket/${bracketId}/override`, {
+    console.log('Submitting result:', { bracketId, winnerId, killmailUrl, tournamentId: tournament.id })
+    const res = await fetch(`/api/tournament/${tournament.id}/advance`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ newWinnerId: winnerId, killmailUrl: killmailUrl || undefined }),
+      body: JSON.stringify({ bracketId, winnerId, ...(killmailUrl ? { killmailUrl } : {}) }),
     })
     if (!res.ok) {
       const d = await res.json() as { error?: string }
@@ -792,7 +792,7 @@ export default function CommandCenterClient({
       )
     )
     setLocalStatuses((prev) => new Map(prev).set(bracketId, "complete"))
-  }, [entrants])
+  }, [entrants, tournament.id])
 
   const handleForfeit = useCallback(async (bracketId: string, loserId: string) => {
     const b = brackets.find((br) => br.id === bracketId)

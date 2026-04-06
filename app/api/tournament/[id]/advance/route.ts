@@ -15,7 +15,16 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  void params // tournamentId not needed here; bracketId identifies the match
+  const { id: tournamentId } = await params
+
+  let body: Record<string, unknown>
+  try {
+    body = (await request.json()) as Record<string, unknown>
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+  }
+
+  console.log('advance route called:', { tournamentId, body })
 
   const raw = request.cookies.get("eve_session")?.value
   if (!raw) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -34,13 +43,6 @@ export async function POST(
 
   if (!adminIds.includes(String(session.character_id))) {
     return NextResponse.json({ error: "Admin access required — log in with an admin character" }, { status: 403 })
-  }
-
-  let body: Record<string, unknown>
-  try {
-    body = (await request.json()) as Record<string, unknown>
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
   }
 
   const { bracketId, winnerId, killmailUrl } = body
