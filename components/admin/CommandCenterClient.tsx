@@ -719,6 +719,7 @@ export default function CommandCenterClient({
   const unassignedEntrants = entrants.filter((e) => !assignedIds.includes(e.id))
 
   // Settings state
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState("")
   const [settingsLoading, setSettingsLoading] = useState(false)
   const [settingsError, setSettingsError] = useState<string | null>(null)
   const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null)
@@ -873,7 +874,11 @@ export default function CommandCenterClient({
 
   const handleRemoveEntrant = useCallback(async (entrantId: string, name: string) => {
     if (!confirm(`Remove ${name}?`)) return
-    const res = await fetch(`/api/admin/entrant/${entrantId}/remove`, { method: "POST" })
+    const res = await fetch(`/api/admin/entrant/${entrantId}/remove`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "Removed by admin" }),
+    })
     if (res.ok) setEntrants((prev) => prev.filter((e) => e.id !== entrantId))
   }, [])
 
@@ -1645,14 +1650,28 @@ export default function CommandCenterClient({
 
             {section("⚠ Danger Zone", (
               <div style={{ padding: 16, border: "1px solid #ef444433", borderRadius: 8 }}>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ fontSize: 11, color: "var(--ev-muted)", fontFamily: "monospace", marginBottom: 10 }}>
+                  Type <span style={{ color: "#ef4444" }}>DELETE</span> to confirm tournament deletion. This cannot be undone.
+                </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                  <input
+                    value={deleteConfirmInput}
+                    onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                    placeholder="Type DELETE to confirm"
+                    style={{ padding: "7px 10px", background: "rgba(239,68,68,0.06)", border: "1px solid #ef444455", borderRadius: 6, color: "#ef4444", fontFamily: "monospace", fontSize: 12, outline: "none" }}
+                  />
                   <button
                     onClick={async () => {
-                      if (!confirm("Delete this tournament? This cannot be undone.")) return
-                      await fetch(`/api/admin/tournament/${tournament.id}/delete`, { method: "POST" })
-                      window.location.href = "/admin"
+                      if (deleteConfirmInput !== "DELETE") return
+                      const res = await fetch(`/api/admin/tournament/${tournament.id}/delete`, {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ confirm: "DELETE" }),
+                      })
+                      if (res.ok) window.location.href = "/admin"
                     }}
-                    style={{ background: "transparent", border: "1px solid #ef4444", borderRadius: 6, padding: "8px 16px", color: "#ef4444", fontFamily: "monospace", fontSize: 12, cursor: "pointer" }}
+                    disabled={deleteConfirmInput !== "DELETE"}
+                    style={{ background: "transparent", border: "1px solid #ef4444", borderRadius: 6, padding: "8px 16px", color: "#ef4444", fontFamily: "monospace", fontSize: 12, cursor: deleteConfirmInput !== "DELETE" ? "not-allowed" : "pointer", opacity: deleteConfirmInput !== "DELETE" ? 0.4 : 1 }}
                   >
                     🗑️ Delete Tournament
                   </button>
