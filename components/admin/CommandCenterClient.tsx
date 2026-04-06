@@ -497,16 +497,19 @@ function ResultModal({
   const [winnerId, setWinnerId] = useState(bracket.winner_id ?? "")
   const [killmailUrl, setKillmailUrl] = useState(bracket.killmail_url ?? "")
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [noSelectionError, setNoSelectionError] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   async function handleSubmit() {
-    if (!winnerId) { setError("Select a winner"); return }
+    if (!winnerId) { setNoSelectionError(true); return }
+    setNoSelectionError(false)
+    setSubmitError(null)
     setLoading(true)
     try {
       await onSubmit(winnerId, killmailUrl)
       onClose()
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed")
+      setSubmitError(e instanceof Error ? e.message : "Failed")
     } finally {
       setLoading(false)
     }
@@ -521,12 +524,25 @@ function ResultModal({
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, color: "var(--ev-muted)", marginBottom: 8, fontFamily: "monospace" }}>WINNER</div>
           {[bracket.entrant1, bracket.entrant2].map((e) => e && (
-            <label key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer" }}>
-              <input type="radio" name="winner" value={e.id} checked={winnerId === e.id} onChange={() => setWinnerId(e.id)} />
+            <div
+              key={e.id}
+              onClick={() => { setWinnerId(e.id); setNoSelectionError(false) }}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px", cursor: "pointer", borderRadius: 6,
+                background: winnerId === e.id ? "rgba(240,192,64,0.08)" : "transparent",
+                border: `1px solid ${winnerId === e.id ? "rgba(240,192,64,0.4)" : "transparent"}`,
+                marginBottom: 6, transition: "all 0.12s",
+              }}
+            >
+              <input type="radio" name="winner" value={e.id} checked={winnerId === e.id} onChange={() => { setWinnerId(e.id); setNoSelectionError(false) }} style={{ accentColor: GOLD }} />
               <Portrait url={e.portrait_url} name={e.character_name} size={28} />
-              <span style={{ color: "var(--ev-text)", fontSize: 13 }}>{e.character_name}</span>
-            </label>
+              <span style={{ color: winnerId === e.id ? GOLD : "var(--ev-text)", fontSize: 13, fontWeight: winnerId === e.id ? 600 : 400 }}>{e.character_name}</span>
+            </div>
           ))}
+          {noSelectionError && (
+            <div style={{ color: AMBER, fontSize: 11, fontFamily: "monospace", marginTop: 4 }}>Please select a winner</div>
+          )}
         </div>
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 11, color: "var(--ev-muted)", marginBottom: 6, fontFamily: "monospace" }}>KILLMAIL URL (optional)</div>
@@ -537,9 +553,9 @@ function ResultModal({
             style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(200,150,12,0.3)", borderRadius: 6, padding: "8px 10px", color: "var(--ev-text)", fontSize: 12, fontFamily: "monospace" }}
           />
         </div>
-        {error && <div style={{ color: "#ef4444", fontSize: 12, marginBottom: 12 }}>{error}</div>}
+        {submitError && <div style={{ color: "#ef4444", fontSize: 12, marginBottom: 12 }}>{submitError}</div>}
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={handleSubmit} disabled={loading || !winnerId} style={{ flex: 1, background: "var(--ev-gold)", border: "none", borderRadius: 6, padding: "10px 0", fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: loading || !winnerId ? "not-allowed" : "pointer", opacity: loading || !winnerId ? 0.5 : 1, color: "#080500" }}>
+          <button onClick={handleSubmit} disabled={loading} style={{ flex: 1, background: "var(--ev-gold)", border: "none", borderRadius: 6, padding: "10px 0", fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.5 : 1, color: "#080500" }}>
             {loading ? "Saving..." : "Confirm Result"}
           </button>
           <button onClick={onClose} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, padding: "10px 16px", color: "var(--ev-muted)", cursor: "pointer", fontFamily: "monospace" }}>
@@ -757,10 +773,11 @@ export default function CommandCenterClient({
   }, [brackets])
 
   const handleResultSubmit = useCallback(async (bracketId: string, winnerId: string, killmailUrl: string) => {
+    console.log('Submitting result:', { bracketId, winnerId, killmailUrl })
     const res = await fetch(`/api/admin/bracket/${bracketId}/override`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ winner_id: winnerId, killmail_url: killmailUrl || undefined }),
+      body: JSON.stringify({ newWinnerId: winnerId, killmailUrl: killmailUrl || undefined }),
     })
     if (!res.ok) {
       const d = await res.json() as { error?: string }
