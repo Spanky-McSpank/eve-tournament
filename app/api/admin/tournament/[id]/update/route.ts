@@ -38,7 +38,7 @@ export async function POST(
   // Tournament rules fields
   const rulesFields = [
     "ship_class", "ship_restrictions", "banned_ships", "engagement_rules",
-    "system_name", "fitting_restrictions", "additional_rules",
+    "system_name", "fitting_restrictions", "additional_rules", "discord_webhook_url",
   ] as const
   for (const field of rulesFields) {
     if (body[field] !== undefined) {
@@ -47,6 +47,15 @@ export async function POST(
   }
   if (body.system_id !== undefined) {
     update.system_id = body.system_id === null ? null : Number(body.system_id)
+  }
+  if (body.scheduled_start !== undefined) {
+    update.scheduled_start = body.scheduled_start === null || body.scheduled_start === "" ? null : String(body.scheduled_start)
+  }
+  if (body.minutes_per_match !== undefined) {
+    update.minutes_per_match = body.minutes_per_match === null ? null : Number(body.minutes_per_match)
+  }
+  if (body.current_round !== undefined) {
+    update.current_round = Number(body.current_round)
   }
 
   if (body.status !== undefined) {

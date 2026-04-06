@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import WelcomeModalWrapper from "@/components/ui/WelcomeModalWrapper";
 import TermsGateWrapper from "@/components/ui/TermsGateWrapper";
+import SiteNav from "@/components/nav/SiteNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <TermsGateWrapper>
+          <SiteNav />
           {children}
           <WelcomeModalWrapper />
         </TermsGateWrapper>

@@ -4,6 +4,7 @@
 import { createSupabaseServerClient } from './supabase'
 import { calculateOdds, MatchOdds } from './odds'
 import { checkAndResolveTournamentProps, checkPropLockouts } from './props'
+import { sendDiscordRoundComplete } from './discord'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -273,7 +274,7 @@ export async function advanceWinner(
   // Check if all matches in this round are complete
   const { data: roundBrackets } = await supabase
     .from('brackets')
-    .select('id, winner_id')
+    .select('id, winner_id, entrant1_id, entrant2_id, is_bye')
     .eq('tournament_id', bracket.tournament_id)
     .eq('round', bracket.round)
 
@@ -284,6 +285,53 @@ export async function advanceWinner(
       bracket.tournament_id as string,
       bracket.round as number
     )
+
+    // Send Discord round summary (non-critical)
+    try {
+      const { data: tRow } = await supabase
+        .from('tournaments')
+        .select('name, discord_webhook_url')
+        .eq('id', bracket.tournament_id as string)
+        .single()
+
+      if (tRow) {
+        // Gather winners and losers from this round
+        const roundMatchData = roundBrackets ?? []
+        const advancerIds = roundMatchData.map((b) => b.winner_id as string).filter(Boolean)
+        const loserIds = roundMatchData
+          .filter((b) => b.winner_id && !b.is_bye)
+          .map((b) =>
+            (b.entrant1_id as string) === (b.winner_id as string)
+              ? (b.entrant2_id as string)
+              : (b.entrant1_id as string)
+          )
+          .filter(Boolean)
+
+        const { data: entrantData } = await supabase
+          .from('entrants')
+          .select('id, character_name')
+          .in('id', [...advancerIds, ...loserIds])
+        const nameMap = new Map((entrantData ?? []).map((e) => [e.id as string, e.character_name as string]))
+
+        // ISK settled this round
+        const { data: roundSettlements } = await supabase
+          .from('settlements')
+          .select('isk_amount')
+          .eq('tournament_id', bracket.tournament_id as string)
+          .eq('round', bracket.round as number)
+        const iskSettled = (roundSettlements ?? []).reduce((sum, s) => sum + ((s.isk_amount as number) ?? 0), 0)
+
+        await sendDiscordRoundComplete({
+          tournamentName: tRow.name as string,
+          round: bracket.round as number,
+          advancers: advancerIds.map((id) => nameMap.get(id) ?? id),
+          eliminated: loserIds.map((id) => nameMap.get(id) ?? id),
+          iskSettled,
+          webhookUrl: tRow.discord_webhook_url as string | null,
+        })
+      }
+    } catch { /* non-critical */ }
+
     // Tournament complete when the final round (which includes final + third place) all have winners
     if ((bracket.round as number) === totalRounds) {
       await supabase

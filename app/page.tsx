@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useEveAuth } from "@/hooks/useEveAuth"
-import EveLoginButton from "@/components/ui/EveLoginButton"
 
 interface Tournament {
   id: string
@@ -37,20 +36,6 @@ export default function HomePage() {
 
   return (
     <div className="ev-page" style={{ fontFamily: "system-ui, sans-serif" }}>
-      {/* Nav bar */}
-      <div style={{
-        background: "var(--ev-card)",
-        borderBottom: "1.5px solid var(--ev-gold)",
-        padding: "14px 32px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <div style={{ fontSize: "var(--font-lg)", fontFamily: "monospace", letterSpacing: 3, fontWeight: 700 }}>
-          <span style={{ color: "var(--ev-text)" }}>EVE </span>
-          <span style={{ color: "var(--ev-champagne)" }}>TOURNAMENT</span>
-        </div>
-        <EveLoginButton />
-      </div>
-
       {/* Hero */}
       <div style={{ textAlign: "center", padding: "72px 32px 52px" }}>
         <h1 style={{

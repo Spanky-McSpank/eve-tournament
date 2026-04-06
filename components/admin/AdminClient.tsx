@@ -101,7 +101,7 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
 
   // Create tournament form
   const [createName, setCreateName] = useState("")
-  const [createCount, setCreateCount] = useState<16 | 32 | 64>(16)
+  const [createCount, setCreateCount] = useState<4 | 6 | 8 | 10 | 12 | 16 | 24 | 32 | 48 | 64>(16)
   const [createLoading, setCreateLoading] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
 
@@ -853,14 +853,14 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
               <div>
                 <label style={labelStyle}>ENTRANT COUNT</label>
                 <div style={{ display: "flex", gap: 1 }}>
-                  {([16, 32, 64] as const).map((n) => (
+                  {([4, 6, 8, 10, 12, 16, 24, 32, 48, 64] as const).map((n, i, arr) => (
                     <button key={n} type="button" onClick={() => setCreateCount(n)} style={{
-                      padding: "8px 20px",
+                      padding: "8px 12px",
                       background: createCount === n ? GOLD : "transparent",
                       border: `1px solid ${createCount === n ? GOLD : "rgba(255,255,255,0.12)"}`,
-                      borderRadius: n === 16 ? "4px 0 0 4px" : n === 64 ? "0 4px 4px 0" : "0",
+                      borderRadius: i === 0 ? "4px 0 0 4px" : i === arr.length - 1 ? "0 4px 4px 0" : "0",
                       color: createCount === n ? "var(--ev-bg)" : "var(--ev-muted)",
-                      fontSize: 13, fontWeight: createCount === n ? 700 : 400,
+                      fontSize: 12, fontWeight: createCount === n ? 700 : 400,
                       cursor: "pointer", fontFamily: "monospace",
                     }}>{n}</button>
                   ))}
@@ -954,7 +954,8 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
                       <td style={{ padding: "10px 12px", fontFamily: "monospace", fontSize: 11, color: "var(--ev-muted)" }}>{new Date(t.created_at).toLocaleDateString()}</td>
                       <td style={{ padding: "10px 12px" }}>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                          <Link href={`/tournament/${t.id}`} style={{ fontSize: 11, color: "var(--ev-text)", textDecoration: "none", padding: "3px 10px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 3, fontFamily: "monospace" }}>View</Link>
+                          <Link href={`/admin/tournament/${t.id}`} style={{ fontSize: 11, color: "#080500", background: GOLD, fontWeight: 700, textDecoration: "none", padding: "4px 12px", borderRadius: 3, fontFamily: "monospace" }}>⚔ Command Center</Link>
+                          <Link href={`/tournament/${t.id}`} style={{ fontSize: 11, color: "var(--ev-text)", textDecoration: "none", padding: "3px 10px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 3, fontFamily: "monospace" }}>👁 View</Link>
                           {t.status === "registration" && (
                             <button onClick={() => void handleGenerate(t.id)}
                               disabled={!canGenerate || generateLoadingId === t.id}
@@ -963,11 +964,8 @@ export default function AdminClient({ initialTournaments }: { initialTournaments
                               {generateLoadingId === t.id ? "Generating..." : "Generate & Start"}
                             </button>
                           )}
-                          {t.status === "active" && (
-                            <Link href={`/tournament/${t.id}/bracket`} style={{ fontSize: 11, color: GOLD, textDecoration: "none", padding: "3px 10px", border: `1px solid rgba(240,192,64,0.3)`, borderRadius: 3, fontFamily: "monospace" }}>View Bracket</Link>
-                          )}
                           <button onClick={() => setMgmtTid(t.id)} style={{ fontSize: 11, fontFamily: "monospace", padding: "3px 10px", background: mgmtTid === t.id ? "rgba(240,192,64,0.1)" : "transparent", border: `1px solid ${mgmtTid === t.id ? GOLD : "rgba(255,255,255,0.08)"}`, borderRadius: 3, color: mgmtTid === t.id ? GOLD : "var(--ev-muted)", cursor: "pointer" }}>
-                            Manage
+                            Legacy Manage
                           </button>
                           {(t.status === "active" || t.status === "complete") && (
                             <Link href={`/admin/tournament/${t.id}/bets`} style={{ fontSize: 11, color: "#f59e0b", textDecoration: "none", padding: "3px 10px", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 3, fontFamily: "monospace" }}>💰 Bets</Link>
