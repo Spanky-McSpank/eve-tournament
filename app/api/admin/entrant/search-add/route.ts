@@ -7,6 +7,7 @@ import {
   getKillboardStats,
 } from "@/lib/esi"
 import { isAdminRequest } from "@/lib/auth"
+import { fillEmptyBracketSlot } from "@/lib/bracket"
 
 async function fetchCorpName(corporationId: number): Promise<string | null> {
   try {
@@ -45,8 +46,8 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (!tournament) return NextResponse.json({ error: "Tournament not found" }, { status: 404 })
-  if (tournament.status !== "registration") {
-    return NextResponse.json({ error: "Tournament is not open for registration" }, { status: 409 })
+  if (tournament.status === "complete") {
+    return NextResponse.json({ error: "Tournament is already complete" }, { status: 409 })
   }
 
   // Manual add (characterId provided directly, skip ESI name search)
@@ -102,5 +103,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ entrant })
+  // If tournament is active, try to fill an empty bracket slot
+  let bracketSlot: { filled: boolean; bracketId?: string } = { filled: false }
+  if (tournament.status === "active" && entrant) {
+    bracketSlot = await fillEmptyBracketSlot(tournamentId, entrant.id as string).catch(() => ({ filled: false }))
+    if (!bracketSlot.filled) {
+      // Entrant added but no empty slot — warn caller
+      return NextResponse.json({ entrant, warning: "No empty bracket slot available — pilot added to roster but not placed in bracket. Remove an entrant or use Force Advance." })
+    }
+  }
+
+  return NextResponse.json({ entrant, ...(bracketSlot.bracketId ? { bracketId: bracketSlot.bracketId } : {}) })
 }

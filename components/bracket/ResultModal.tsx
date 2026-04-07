@@ -58,7 +58,10 @@ export interface ResultModalProps {
 }
 
 export default function ResultModal({ match, onClose, onConfirm }: ResultModalProps) {
-  const [winnerId, setWinnerId] = useState<string | null>(null)
+  // Auto-select if only one entrant is available
+  const [winnerId, setWinnerId] = useState<string | null>(
+    match.entrant1 && !match.entrant2 ? match.entrant1.id : null
+  )
   const [killmailUrl, setKillmailUrl] = useState("")
   const [urlError, setUrlError] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -116,6 +119,11 @@ export default function ResultModal({ match, onClose, onConfirm }: ResultModalPr
           RECORD MATCH RESULT
         </h2>
 
+        {match.entrant1 && !match.entrant2 && (
+          <div style={{ marginBottom: 12, padding: "8px 12px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 6, fontSize: 11, color: "#f59e0b", fontFamily: "monospace" }}>
+            ⚠ No opponent set — {match.entrant1.character_name} will advance by default
+          </div>
+        )}
         <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
           {match.entrant1 && (
             <FighterCard entrant={match.entrant1} selected={winnerId === match.entrant1.id}

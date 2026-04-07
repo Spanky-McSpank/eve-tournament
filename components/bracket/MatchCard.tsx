@@ -190,6 +190,7 @@ export default function MatchCard({ match, isAdmin, onResultEntered, isThirdPlac
   const isComplete = Boolean(match.winner)
   const bothSet = Boolean(match.entrant1 && match.entrant2)
   const canEnterResult = isAdmin && !isComplete && bothSet
+  const canOverride = isAdmin && !isComplete && Boolean(match.entrant1) && !match.entrant2
 
   const e1IsWinner = isComplete && match.winner?.id === match.entrant1?.id
   const e1IsLoser = isComplete && !e1IsWinner && Boolean(match.entrant1)
@@ -339,7 +340,7 @@ export default function MatchCard({ match, isAdmin, onResultEntered, isThirdPlac
           />
         </div>
 
-        {(match.killmail_url || canEnterResult) && (
+        {(match.killmail_url || canEnterResult || canOverride) && (
           <div style={{
             borderTop: `0.5px solid ${C.border2}`,
             padding: "6px 12px",
@@ -361,6 +362,14 @@ export default function MatchCard({ match, isAdmin, onResultEntered, isThirdPlac
                 borderRadius: "var(--border-radius)", cursor: "pointer", fontFamily: "monospace",
                 minHeight: "var(--btn-height-sm)",
               }}>Enter Result</button>
+            )}
+            {canOverride && (
+              <button onClick={() => setShowModal(true)} style={{
+                fontSize: "var(--font-sm)", color: "#f59e0b", background: "transparent",
+                padding: "4px 12px", border: "1px solid #f59e0b",
+                borderRadius: "var(--border-radius)", cursor: "pointer", fontFamily: "monospace",
+                minHeight: "var(--btn-height-sm)",
+              }}>Enter Result — Override</button>
             )}
           </div>
         )}

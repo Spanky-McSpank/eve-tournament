@@ -192,6 +192,16 @@ function SmBtn({
   )
 }
 
+// ── Round label helper ─────────────────────────────────────────────────────
+
+function getRoundLabel(round: number, totalRounds: number): string {
+  if (round === totalRounds) return "FINAL"
+  if (round === totalRounds - 1) return "SEMIFINALS"
+  if (round === totalRounds - 2 && totalRounds >= 4) return "QUARTERFINALS"
+  const remaining = Math.pow(2, totalRounds - round + 1)
+  return `ROUND OF ${remaining}`
+}
+
 // ── QueueMatchCard ─────────────────────────────────────────────────────────
 
 function QueueMatchCard({
@@ -348,9 +358,6 @@ function QueueMatchCard({
           )}
           {matchStatus === "live" && (
             <>
-              <SmBtn onClick={() => onResultEnter(bracket.id)} variant="gold">
-                🏆 ENTER RESULT
-              </SmBtn>
               {!forfeitExpanded && (
                 <SmBtn onClick={() => setForfeitExpanded(true)} variant="danger">
                   ☠️ Forfeit
@@ -360,6 +367,18 @@ function QueueMatchCard({
                 🔄 Reset
               </SmBtn>
             </>
+          )}
+          {/* Always show Enter Result when both entrants are set */}
+          {e1 && e2 && (
+            <SmBtn onClick={() => onResultEnter(bracket.id)} variant="gold">
+              🏆 {matchStatus === "live" ? "ENTER RESULT" : "Enter Result"}
+            </SmBtn>
+          )}
+          {/* Single entrant — override button */}
+          {e1 && !e2 && (
+            <SmBtn onClick={() => onResultEnter(bracket.id)} variant="amber">
+              🏆 Enter Result — Override
+            </SmBtn>
           )}
         </div>
       )}
@@ -494,7 +513,9 @@ function ResultModal({
   onClose: () => void
   onSubmit: (winnerId: string, killmailUrl: string) => Promise<void>
 }) {
-  const [winnerId, setWinnerId] = useState(bracket.winner_id ?? "")
+  const [winnerId, setWinnerId] = useState(
+    bracket.winner_id ?? (bracket.entrant1 && !bracket.entrant2 ? bracket.entrant1.id : "")
+  )
   const [killmailUrl, setKillmailUrl] = useState(bracket.killmail_url ?? "")
   const [loading, setLoading] = useState(false)
   const [noSelectionError, setNoSelectionError] = useState(false)
@@ -523,6 +544,11 @@ function ResultModal({
         </div>
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, color: "var(--ev-muted)", marginBottom: 8, fontFamily: "monospace" }}>WINNER</div>
+          {bracket.entrant1 && !bracket.entrant2 && (
+            <div style={{ marginBottom: 10, padding: "7px 10px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 6, fontSize: 11, color: AMBER, fontFamily: "monospace" }}>
+              ⚠ No opponent set — {bracket.entrant1.character_name} will advance by default
+            </div>
+          )}
           {[bracket.entrant1, bracket.entrant2].map((e) => e && (
             <div
               key={e.id}
@@ -620,6 +646,142 @@ function ScheduleModal({
   )
 }
 
+// ── ForceAdvanceModal ──────────────────────────────────────────────────────
+
+function ForceAdvanceModal({
+  incompleteBrackets,
+  currentRound,
+  tournamentId,
+  onClose,
+  onComplete,
+}: {
+  incompleteBrackets: BracketFull[]
+  currentRound: number
+  tournamentId: string
+  onClose: () => void
+  onComplete: () => Promise<void>
+}) {
+  const [resolutions, setResolutions] = useState<Record<string, "advance1" | "advance2" | "void">>(() => {
+    const init: Record<string, "advance1" | "advance2" | "void"> = {}
+    for (const b of incompleteBrackets) {
+      if (b.entrant1 && !b.entrant2) init[b.id] = "advance1"
+      else if (!b.entrant1 && b.entrant2) init[b.id] = "advance2"
+    }
+    return init
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const allResolved = incompleteBrackets.every((b) => resolutions[b.id] !== undefined)
+
+  async function handleConfirm() {
+    if (!allResolved) return
+    setLoading(true)
+    setError(null)
+    try {
+      const matchResolutions = incompleteBrackets.map((b) => {
+        const r = resolutions[b.id]
+        if (r === "void") return { bracketId: b.id, action: "void" as const }
+        const winnerId = r === "advance1" ? b.entrant1_id : b.entrant2_id
+        return { bracketId: b.id, action: "advance" as const, winnerId: winnerId! }
+      })
+      const res = await fetch(`/api/admin/tournament/${tournamentId}/force-advance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ round: currentRound, matchResolutions }),
+      })
+      if (!res.ok) {
+        const d = await res.json() as { error?: string }
+        throw new Error(d.error ?? "Failed")
+      }
+      await onComplete()
+      onClose()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#111", border: `1px solid ${AMBER}`, borderRadius: 10, padding: 28, width: "100%", maxWidth: 540, maxHeight: "80vh", overflowY: "auto" }}>
+        <div style={{ fontSize: 14, fontFamily: "monospace", fontWeight: 700, color: AMBER, marginBottom: 6 }}>
+          ⚠ FORCE ADVANCE TO ROUND {currentRound + 1}
+        </div>
+        <div style={{ fontSize: 11, color: AMBER, fontFamily: "monospace", marginBottom: 20, lineHeight: 1.6 }}>
+          The following matches are incomplete and will be handled as follows:
+        </div>
+
+        {incompleteBrackets.map((b) => {
+          const r = resolutions[b.id]
+          const hasBoth = Boolean(b.entrant1 && b.entrant2)
+          const onlyOne = Boolean((b.entrant1 && !b.entrant2) || (!b.entrant1 && b.entrant2))
+          const autoAdvancer = b.entrant1 ?? b.entrant2
+
+          return (
+            <div key={b.id} style={{ marginBottom: 14, padding: "12px 14px", background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8 }}>
+              <div style={{ fontSize: 11, color: "var(--ev-muted)", fontFamily: "monospace", marginBottom: 8 }}>
+                R{b.round}·M{b.match_number}: {b.entrant1?.character_name ?? "TBD"} vs {b.entrant2?.character_name ?? "TBD"}
+              </div>
+              {onlyOne && autoAdvancer && (
+                <div style={{ fontSize: 11, color: "#22c55e", fontFamily: "monospace" }}>
+                  ✓ {autoAdvancer.character_name} advances automatically (no opponent)
+                </div>
+              )}
+              {!b.entrant1 && !b.entrant2 && (
+                <div style={{ fontSize: 11, color: "var(--ev-muted)", fontFamily: "monospace" }}>
+                  Empty match — will be skipped
+                </div>
+              )}
+              {hasBoth && (
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {([
+                    { val: "advance1" as const, label: `⚔ ${b.entrant1!.character_name}` },
+                    { val: "advance2" as const, label: `⚔ ${b.entrant2!.character_name}` },
+                    { val: "void" as const, label: "❌ Void Match" },
+                  ] as const).map(({ val, label }) => (
+                    <button
+                      key={val}
+                      onClick={() => setResolutions((prev) => ({ ...prev, [b.id]: val }))}
+                      style={{
+                        background: r === val ? (val === "void" ? "rgba(239,68,68,0.15)" : "rgba(240,192,64,0.12)") : "transparent",
+                        border: `1px solid ${r === val ? (val === "void" ? "#ef4444" : "var(--ev-gold)") : "rgba(255,255,255,0.12)"}`,
+                        borderRadius: 6, padding: "5px 12px", fontFamily: "monospace", fontSize: 11,
+                        color: r === val ? (val === "void" ? "#ef4444" : GOLD) : "var(--ev-muted)",
+                        cursor: "pointer",
+                      }}
+                    >{label}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {!allResolved && (
+          <div style={{ color: AMBER, fontSize: 11, fontFamily: "monospace", marginBottom: 12 }}>
+            Select a resolution for all incomplete matches to continue.
+          </div>
+        )}
+        {error && <div style={{ color: "#ef4444", fontSize: 12, marginBottom: 12 }}>{error}</div>}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={handleConfirm}
+            disabled={!allResolved || loading}
+            style={{ flex: 1, background: allResolved && !loading ? "#dc2626" : "rgba(220,38,38,0.15)", border: "none", borderRadius: 6, padding: "10px 0", fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: !allResolved || loading ? "not-allowed" : "pointer", color: allResolved && !loading ? "#fff" : "rgba(220,38,38,0.4)" }}
+          >
+            {loading ? "Processing..." : "⚡ Confirm Force Advance"}
+          </button>
+          <button onClick={onClose} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, padding: "10px 16px", color: "var(--ev-muted)", cursor: "pointer", fontFamily: "monospace" }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Props passed from server ───────────────────────────────────────────────
 
 interface CommandCenterProps {
@@ -663,6 +825,7 @@ export default function CommandCenterClient({
   const [selectedBracketId, setSelectedBracketId] = useState<string | null>(null)
   const [resultModal, setResultModal] = useState<BracketFull | null>(null)
   const [scheduleModal, setScheduleModal] = useState<{ bracketId: string; current: string | null } | null>(null)
+  const [forceAdvanceOpen, setForceAdvanceOpen] = useState(false)
 
   // Tournament meta state
   const [announcement, setAnnouncement] = useState(tournament.announcement ?? "")
@@ -717,6 +880,12 @@ export default function CommandCenterClient({
 
   const assignedIds = slots.map((s) => s.entrantId).filter((id) => id && id !== "BYE")
   const unassignedEntrants = entrants.filter((e) => !assignedIds.includes(e.id))
+
+  // Active roster modification state (Part 5)
+  const [forfeitRemoveId, setForfeitRemoveId] = useState<string | null>(null)
+
+  // Slot management state (Part 7)
+  const [swapSlot1, setSwapSlot1] = useState<{ bracketId: string; slot: "entrant1" | "entrant2"; name: string } | null>(null)
 
   // Settings state
   const [deleteConfirmInput, setDeleteConfirmInput] = useState("")
@@ -882,6 +1051,43 @@ export default function CommandCenterClient({
     if (res.ok) setEntrants((prev) => prev.filter((e) => e.id !== entrantId))
   }, [])
 
+  const handleForfeitRemove = useCallback(async (entrantId: string) => {
+    const res = await fetch(`/api/admin/entrant/${entrantId}/remove`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "Forfeit — removed by admin during active tournament" }),
+    })
+    if (res.ok) {
+      setEntrants((prev) => prev.filter((e) => e.id !== entrantId))
+      setForfeitRemoveId(null)
+      await refetchBrackets()
+    }
+  }, [refetchBrackets])
+
+  const handleAssignSlot = useCallback(async (bracketId: string, slot: "entrant1" | "entrant2", entrantId: string | null) => {
+    const res = await fetch(`/api/admin/bracket/${bracketId}/assign-slot`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slot, entrantId }),
+    })
+    if (res.ok) await refetchBrackets()
+  }, [refetchBrackets])
+
+  const handleSwapSlots = useCallback(async (
+    b1Id: string, slot1: "entrant1" | "entrant2",
+    b2Id: string, slot2: "entrant1" | "entrant2"
+  ) => {
+    const res = await fetch("/api/admin/bracket/swap-slots", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bracketId1: b1Id, slot1, bracketId2: b2Id, slot2 }),
+    })
+    if (res.ok) {
+      setSwapSlot1(null)
+      await refetchBrackets()
+    }
+  }, [refetchBrackets])
+
   const handleRefreshStats = useCallback(async (entrantId: string) => {
     const res = await fetch(`/api/admin/entrant/${entrantId}/refresh-stats`, { method: "POST" })
     if (res.ok) {
@@ -963,6 +1169,25 @@ export default function CommandCenterClient({
       alert(`Scheduled ${d.updated ?? 0} matches.`)
     }
   }, [settingFields, tournament.id])
+
+  // ── Active roster helpers ────────────────────────────────────────────────
+
+  function getPilotBracketStatus(entrantId: string): "unplaced" | "active" | "eliminated" | "winner" {
+    const entrantBrackets = brackets.filter((b) => b.entrant1_id === entrantId || b.entrant2_id === entrantId)
+    if (entrantBrackets.length === 0) return "unplaced"
+    const lostMatch = entrantBrackets.find((b) => b.winner_id && b.winner_id !== entrantId)
+    if (lostMatch) return "eliminated"
+    const wonFinal = entrantBrackets.find((b) => b.winner_id === entrantId && b.round === totalRounds && !b.is_third_place)
+    if (wonFinal) return "winner"
+    return "active"
+  }
+
+  // Round-1 brackets for slot management (Part 7)
+  const round1Brackets = brackets.filter((b) => b.round === 1 && !b.is_third_place)
+  const placedEntrantIds = new Set(
+    round1Brackets.flatMap((b) => [b.entrant1_id, b.entrant2_id].filter(Boolean) as string[])
+  )
+  const unplacedEntrants = entrants.filter((e) => !placedEntrantIds.has(e.id))
 
   // ── Tab styles ───────────────────────────────────────────────────────────
 
@@ -1127,8 +1352,11 @@ export default function CommandCenterClient({
                   {/* Round tabs */}
                   <div style={{ display: "flex", gap: 4, marginBottom: 16, flexWrap: "wrap" }}>
                     {rounds.filter((r) => {
-                      const hasNonThirdPlace = brackets.some((b) => b.round === r && !b.is_third_place)
-                      return hasNonThirdPlace
+                      // Exclude 3rd place (match_number 0 handled separately)
+                      // Exclude rounds where ALL non-third-place matches are byes (nothing to manage)
+                      const regularMatches = brackets.filter((b) => b.round === r && !b.is_third_place)
+                      const hasNonBye = regularMatches.some((b) => !b.is_bye)
+                      return regularMatches.length > 0 && hasNonBye
                     }).map((r) => {
                       const rComplete = brackets.filter((b) => b.round === r && !b.is_third_place).every((b) => b.winner_id || b.is_bye)
                       return (
@@ -1146,7 +1374,7 @@ export default function CommandCenterClient({
                             cursor: "pointer",
                           }}
                         >
-                          Round {r} {rComplete ? "✓" : ""}
+                          {getRoundLabel(r, totalRounds)} {rComplete ? "✓" : ""}
                         </button>
                       )
                     })}
@@ -1166,21 +1394,28 @@ export default function CommandCenterClient({
                     />
                   ))}
 
-                  {/* Third place */}
-                  {brackets.filter((b) => b.round === totalRounds && b.is_third_place).map((b) => (
-                    <div key={b.id} style={{ marginTop: 8 }}>
-                      <div style={{ fontSize: 10, color: AMBER, fontFamily: "monospace", marginBottom: 6 }}>— 3RD PLACE MATCH —</div>
-                      <QueueMatchCard
-                        bracket={b}
-                        matchStatus={derivedStatus(b, localStatuses.get(b.id))}
-                        onStatusChange={handleStatusChange}
-                        onResultEnter={handleResultEnter}
-                        onForfeit={handleForfeit}
-                        onCheckin={handleCheckin}
-                        onSchedule={(id) => setScheduleModal({ bracketId: id, current: brackets.find((br) => br.id === id)?.scheduled_time ?? null })}
-                      />
-                    </div>
-                  ))}
+                  {/* Third place — only shown once both semifinal matches are complete */}
+                  {(() => {
+                    const semiFinalRound = totalRounds - 1
+                    const semiFinals = brackets.filter((b) => b.round === semiFinalRound && !b.is_third_place && !b.is_bye)
+                    const semisComplete = semiFinals.length > 0 && semiFinals.every((b) => b.winner_id)
+                    const thirdPlaceMatch = brackets.find((b) => b.is_third_place)
+                    if (!thirdPlaceMatch || !semisComplete) return null
+                    return (
+                      <div style={{ marginTop: 20, paddingTop: 16, borderTop: "0.5px solid rgba(205,127,50,0.3)" }}>
+                        <div style={{ fontSize: 10, color: "#CD7F32", fontFamily: "monospace", letterSpacing: 2, marginBottom: 10 }}>— 3RD PLACE MATCH —</div>
+                        <QueueMatchCard
+                          bracket={thirdPlaceMatch}
+                          matchStatus={derivedStatus(thirdPlaceMatch, localStatuses.get(thirdPlaceMatch.id))}
+                          onStatusChange={handleStatusChange}
+                          onResultEnter={handleResultEnter}
+                          onForfeit={handleForfeit}
+                          onCheckin={handleCheckin}
+                          onSchedule={(id) => setScheduleModal({ bracketId: id, current: brackets.find((br) => br.id === id)?.scheduled_time ?? null })}
+                        />
+                      </div>
+                    )
+                  })()}
 
                   {/* Round complete indicator */}
                   {roundComplete && selectedRound < totalRounds && (
@@ -1207,7 +1442,9 @@ export default function CommandCenterClient({
 
                   {/* Round summary */}
                   <div style={{ marginTop: 16, padding: 14, background: "rgba(255,255,255,0.03)", border: "0.5px solid rgba(200,150,12,0.2)", borderRadius: 8 }}>
-                    <div style={{ fontSize: 10, color: "var(--ev-muted)", fontFamily: "monospace", letterSpacing: 1, marginBottom: 10 }}>ROUND {selectedRound} SUMMARY</div>
+                    <div style={{ fontSize: 10, color: "var(--ev-muted)", fontFamily: "monospace", letterSpacing: 1, marginBottom: 10 }}>
+                      {getRoundLabel(selectedRound, totalRounds)} SUMMARY
+                    </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontFamily: "monospace" }}>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span style={{ color: "var(--ev-muted)" }}>Complete</span>
@@ -1218,6 +1455,14 @@ export default function CommandCenterClient({
                         <span>{roundTotal - roundCompleted}</span>
                       </div>
                     </div>
+                    {/* Force advance — always available when round has incomplete matches */}
+                    {!roundComplete && selectedRound < totalRounds && (
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "0.5px solid rgba(255,255,255,0.06)" }}>
+                        <SmBtn onClick={() => setForceAdvanceOpen(true)} variant="amber">
+                          ⚡ Force Advance Round
+                        </SmBtn>
+                      </div>
+                    )}
                   </div>
 
                   {/* Overall progress */}
@@ -1233,6 +1478,18 @@ export default function CommandCenterClient({
         {/* ── TAB 2: ROSTER BUILDER ──────────────────────────────────────── */}
         {activeTab === "roster" && (
           <div>
+            {/* Active tournament warning banner */}
+            {tournament.status === "active" && (
+              <div style={{ marginBottom: 20, padding: "12px 16px", background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 8 }}>
+                <div style={{ fontSize: 11, color: AMBER, fontFamily: "monospace", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>
+                  ⚡ TOURNAMENT IN PROGRESS
+                </div>
+                <div style={{ fontSize: 11, color: "var(--ev-muted)", fontFamily: "monospace" }}>
+                  Adding a pilot will attempt to fill an empty round-1 slot. Removing a pilot will forfeit any active matches.
+                </div>
+              </div>
+            )}
+
             {/* Add pilots section */}
             {section("Add Pilots", (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
@@ -1295,43 +1552,187 @@ export default function CommandCenterClient({
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       <tr style={{ borderBottom: "0.5px solid rgba(200,150,12,0.2)" }}>
-                        {["#", "Pilot", "Corp", "Seed", "30d K", "30d L", "Efficiency", "Actions"].map((h) => (
+                        {["#", "Pilot", "Corp", "Seed", "30d K", "30d L", "Efficiency", ...(tournament.status === "active" ? ["Status"] : []), "Actions"].map((h) => (
                           <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontFamily: "monospace", fontSize: 10, color: "var(--ev-muted)", letterSpacing: 1, whiteSpace: "nowrap" }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {entrants.map((e, i) => (
-                        <tr key={e.id} style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}>
-                          <td style={{ padding: "8px 10px", color: "var(--ev-muted)", fontFamily: "monospace" }}>{i + 1}</td>
-                          <td style={{ padding: "8px 10px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <Portrait url={e.portrait_url} name={e.character_name} size={28} />
-                              <span style={{ color: "var(--ev-text)" }}>{e.character_name}</span>
-                            </div>
-                          </td>
-                          <td style={{ padding: "8px 10px", color: "var(--ev-muted)", fontSize: 11 }}>{e.corporation_name ?? "—"}</td>
-                          <td style={{ padding: "8px 10px", fontFamily: "monospace", color: GOLD }}>{e.seed ?? "—"}</td>
-                          <td style={{ padding: "8px 10px", fontFamily: "monospace", color: "#22c55e" }}>{e.kills_30d}</td>
-                          <td style={{ padding: "8px 10px", fontFamily: "monospace", color: "#ef4444" }}>{e.losses_30d}</td>
-                          <td style={{ padding: "8px 10px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <div style={{ width: 48, height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
-                                <div style={{ width: `${(e.efficiency * 100).toFixed(0)}%`, height: "100%", background: e.efficiency >= 0.5 ? "#22c55e" : "#f59e0b" }} />
+                      {entrants.map((e, i) => {
+                        const pilotStatus = tournament.status === "active" ? getPilotBracketStatus(e.id) : null
+                        const isForfeitOpen = forfeitRemoveId === e.id
+                        return (
+                          <tr key={e.id} style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}>
+                            <td style={{ padding: "8px 10px", color: "var(--ev-muted)", fontFamily: "monospace" }}>{i + 1}</td>
+                            <td style={{ padding: "8px 10px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <Portrait url={e.portrait_url} name={e.character_name} size={28} />
+                                <span style={{ color: "var(--ev-text)" }}>{e.character_name}</span>
                               </div>
-                              <span style={{ fontFamily: "monospace", color: "var(--ev-muted)" }}>{(e.efficiency * 100).toFixed(0)}%</span>
-                            </div>
-                          </td>
-                          <td style={{ padding: "8px 10px" }}>
-                            <div style={{ display: "flex", gap: 4 }}>
-                              <SmBtn onClick={() => handleRefreshStats(e.id)} variant="ghost">🔄</SmBtn>
-                              <SmBtn onClick={() => handleRemoveEntrant(e.id, e.character_name)} variant="danger">🗑️</SmBtn>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td style={{ padding: "8px 10px", color: "var(--ev-muted)", fontSize: 11 }}>{e.corporation_name ?? "—"}</td>
+                            <td style={{ padding: "8px 10px", fontFamily: "monospace", color: GOLD }}>{e.seed ?? "—"}</td>
+                            <td style={{ padding: "8px 10px", fontFamily: "monospace", color: "#22c55e" }}>{e.kills_30d}</td>
+                            <td style={{ padding: "8px 10px", fontFamily: "monospace", color: "#ef4444" }}>{e.losses_30d}</td>
+                            <td style={{ padding: "8px 10px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <div style={{ width: 48, height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
+                                  <div style={{ width: `${(e.efficiency * 100).toFixed(0)}%`, height: "100%", background: e.efficiency >= 0.5 ? "#22c55e" : "#f59e0b" }} />
+                                </div>
+                                <span style={{ fontFamily: "monospace", color: "var(--ev-muted)" }}>{(e.efficiency * 100).toFixed(0)}%</span>
+                              </div>
+                            </td>
+                            {pilotStatus && (
+                              <td style={{ padding: "8px 10px" }}>
+                                <span style={{ fontFamily: "monospace", fontSize: 10, letterSpacing: 1,
+                                  color: pilotStatus === "winner" ? GOLD : pilotStatus === "active" ? "#22c55e" : pilotStatus === "eliminated" ? "#ef4444" : "var(--ev-muted)"
+                                }}>
+                                  {pilotStatus === "winner" ? "🏆 WINNER" : pilotStatus === "active" ? "⚔ ACTIVE" : pilotStatus === "eliminated" ? "✗ ELIM" : "UNPLACED"}
+                                </span>
+                              </td>
+                            )}
+                            <td style={{ padding: "8px 10px" }}>
+                              {tournament.status === "active" ? (
+                                isForfeitOpen ? (
+                                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                    <span style={{ fontSize: 10, color: "#ef4444", fontFamily: "monospace" }}>Forfeit &amp; remove?</span>
+                                    <SmBtn onClick={() => handleForfeitRemove(e.id)} variant="danger">Yes</SmBtn>
+                                    <SmBtn onClick={() => setForfeitRemoveId(null)} variant="ghost">No</SmBtn>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: "flex", gap: 4 }}>
+                                    <SmBtn onClick={() => handleRefreshStats(e.id)} variant="ghost">🔄</SmBtn>
+                                    <SmBtn onClick={() => setForfeitRemoveId(e.id)} variant="danger">☠ Forfeit</SmBtn>
+                                  </div>
+                                )
+                              ) : (
+                                <div style={{ display: "flex", gap: 4 }}>
+                                  <SmBtn onClick={() => handleRefreshStats(e.id)} variant="ghost">🔄</SmBtn>
+                                  <SmBtn onClick={() => handleRemoveEntrant(e.id, e.character_name)} variant="danger">🗑️</SmBtn>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            ))}
+
+            {/* Part 7: Bracket slot management — only for active tournaments */}
+            {tournament.status === "active" && section("Bracket Slot Management", (
+              <div>
+                <div style={{ fontSize: 11, color: "var(--ev-muted)", fontFamily: "monospace", marginBottom: 14 }}>
+                  Round 1 match slots. Click any unplayed slot to select it, then click another to swap. Use Assign to place an unplaced pilot.
+                  {swapSlot1 && (
+                    <span style={{ color: AMBER, marginLeft: 12 }}>
+                      Selected: {swapSlot1.name} — click another slot to swap, or&nbsp;
+                      <button onClick={() => setSwapSlot1(null)} style={{ background: "none", border: "none", color: AMBER, cursor: "pointer", fontFamily: "monospace", fontSize: 11, padding: 0, textDecoration: "underline" }}>cancel</button>
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: 20 }}>
+                  {/* Slot grid */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {round1Brackets.map((b) => {
+                      const isComplete = !!b.winner_id
+                      return (
+                        <div key={b.id} style={{ background: "rgba(255,255,255,0.03)", border: `0.5px solid ${isComplete ? "rgba(200,150,12,0.1)" : "rgba(200,150,12,0.2)"}`, borderRadius: 6, padding: "8px 12px", opacity: isComplete ? 0.6 : 1 }}>
+                          <div style={{ fontSize: 9, color: "var(--ev-muted)", fontFamily: "monospace", marginBottom: 6 }}>
+                            M{b.match_number} {isComplete ? "✓ COMPLETE" : b.is_bye ? "BYE" : ""}
+                          </div>
+                          {(["entrant1", "entrant2"] as const).map((slot) => {
+                            const slotEntrant = slot === "entrant1" ? b.entrant1 : b.entrant2
+                            const slotId = slot === "entrant1" ? b.entrant1_id : b.entrant2_id
+                            const isSwapSelected = swapSlot1?.bracketId === b.id && swapSlot1?.slot === slot
+                            const canInteract = !isComplete && !b.is_bye
+                            return (
+                              <div
+                                key={slot}
+                                style={{
+                                  display: "flex", alignItems: "center", gap: 8,
+                                  padding: "5px 8px", marginBottom: 2,
+                                  background: isSwapSelected ? "rgba(245,158,11,0.12)" : slotEntrant ? "rgba(200,150,12,0.05)" : "rgba(255,255,255,0.02)",
+                                  border: `0.5px solid ${isSwapSelected ? AMBER : slotEntrant ? "rgba(200,150,12,0.15)" : "rgba(255,255,255,0.06)"}`,
+                                  borderRadius: 4,
+                                  cursor: canInteract ? "pointer" : "default",
+                                }}
+                                onClick={() => {
+                                  if (!canInteract) return
+                                  if (!swapSlot1) {
+                                    setSwapSlot1({ bracketId: b.id, slot, name: slotEntrant?.character_name ?? "(empty)" })
+                                  } else if (swapSlot1.bracketId === b.id && swapSlot1.slot === slot) {
+                                    setSwapSlot1(null) // deselect
+                                  } else {
+                                    handleSwapSlots(swapSlot1.bracketId, swapSlot1.slot, b.id, slot)
+                                  }
+                                }}
+                              >
+                                {slotEntrant ? (
+                                  <>
+                                    <Portrait url={slotEntrant.portrait_url} name={slotEntrant.character_name} size={20} />
+                                    <span style={{ fontSize: 11, color: isSwapSelected ? AMBER : "var(--ev-text)", flex: 1 }}>{slotEntrant.character_name}</span>
+                                    {canInteract && !swapSlot1 && (
+                                      <div onClick={(ev) => ev.stopPropagation()}>
+                                        <SmBtn onClick={() => handleAssignSlot(b.id, slot, null)} variant="ghost">✕</SmBtn>
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <span style={{ fontSize: 10, color: "var(--ev-muted)", fontStyle: "italic", flex: 1 }}>— empty slot —</span>
+                                    {canInteract && unplacedEntrants.length > 0 && !swapSlot1 && (
+                                      <span style={{ fontSize: 9, color: AMBER, fontFamily: "monospace" }}>click to assign</span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Unplaced pilots sidebar */}
+                  <div>
+                    <div style={{ fontSize: 10, color: "var(--ev-muted)", fontFamily: "monospace", letterSpacing: 1, marginBottom: 8 }}>
+                      UNPLACED PILOTS ({unplacedEntrants.length})
+                    </div>
+                    {unplacedEntrants.length === 0 ? (
+                      <div style={{ fontSize: 11, color: "#22c55e", fontFamily: "monospace" }}>✓ All pilots placed</div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {unplacedEntrants.map((e) => (
+                          <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 8px", background: swapSlot1 ? "rgba(200,150,12,0.06)" : "rgba(255,255,255,0.03)", border: "0.5px solid rgba(255,255,255,0.06)", borderRadius: 4 }}>
+                            <Portrait url={e.portrait_url} name={e.character_name} size={18} />
+                            <span style={{ fontSize: 11, color: "var(--ev-text)", flex: 1 }}>{e.character_name}</span>
+                            {swapSlot1 && (
+                              <SmBtn
+                                onClick={() => {
+                                  const emptyBracket = round1Brackets.find((b) => !b.winner_id && (!b.entrant1_id || !b.entrant2_id))
+                                  if (!emptyBracket) return
+                                  const emptySlot: "entrant1" | "entrant2" = !emptyBracket.entrant1_id ? "entrant1" : "entrant2"
+                                  handleAssignSlot(emptyBracket.id, emptySlot, e.id)
+                                }}
+                                variant="amber"
+                              >
+                                Assign
+                              </SmBtn>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {unplacedEntrants.length > 0 && (
+                      <div style={{ marginTop: 10, fontSize: 10, color: "var(--ev-muted)", fontFamily: "monospace" }}>
+                        Select an empty slot in the grid to assign a pilot.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -1696,6 +2097,15 @@ export default function CommandCenterClient({
           current={scheduleModal.current}
           onClose={() => setScheduleModal(null)}
           onSave={(time) => handleScheduleSave(scheduleModal.bracketId, time)}
+        />
+      )}
+      {forceAdvanceOpen && (
+        <ForceAdvanceModal
+          incompleteBrackets={roundBrackets.filter((b) => !b.winner_id && !b.is_bye)}
+          currentRound={selectedRound}
+          tournamentId={tournament.id}
+          onClose={() => setForceAdvanceOpen(false)}
+          onComplete={refetchBrackets}
         />
       )}
 

@@ -613,6 +613,34 @@ export async function generateRoundSettlement(
   )
 }
 
+// ── fillEmptyBracketSlot ───────────────────────────────────────────────────
+
+export async function fillEmptyBracketSlot(
+  tournamentId: string,
+  entrantId: string
+): Promise<{ filled: boolean; bracketId?: string }> {
+  const supabase = createSupabaseServerClient()
+
+  const { data: brackets } = await supabase
+    .from('brackets')
+    .select('id, entrant1_id, entrant2_id')
+    .eq('tournament_id', tournamentId)
+    .eq('round', 1)
+    .is('winner_id', null)
+    .eq('is_bye', false)
+
+  const withEmptySlot = (brackets ?? []).find(
+    (b) => !b.entrant1_id || !b.entrant2_id
+  )
+
+  if (!withEmptySlot) return { filled: false }
+
+  const slotField = !withEmptySlot.entrant1_id ? 'entrant1_id' : 'entrant2_id'
+  await supabase.from('brackets').update({ [slotField]: entrantId }).eq('id', withEmptySlot.id as string)
+
+  return { filled: true, bracketId: withEmptySlot.id as string }
+}
+
 // ── getTournamentBracket ───────────────────────────────────────────────────
 
 export async function getTournamentBracket(
