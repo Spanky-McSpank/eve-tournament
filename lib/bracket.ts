@@ -129,12 +129,21 @@ export async function generateBracket(
   for (let r = 2; r <= totalRounds; r++) {
     const matchesInRound = bracketSize / Math.pow(2, r)
     for (let m = 1; m <= matchesInRound; m++) {
+      // Pre-populate slots from bye winners feeding into this match (round 2 only)
+      let ent1: string | null = null
+      let ent2: string | null = null
+      if (r === 2) {
+        const oddByeIdx = m * 2 - 1  // odd match_number feeding into slot 1
+        const evenByeIdx = m * 2     // even match_number feeding into slot 2
+        if (oddByeIdx <= byes) ent1 = sorted[oddByeIdx - 1].id
+        if (evenByeIdx <= byes) ent2 = sorted[evenByeIdx - 1].id
+      }
       allMatches.push({
         tournament_id: tournamentId,
         round: r,
         match_number: m,
-        entrant1_id: null,
-        entrant2_id: null,
+        entrant1_id: ent1,
+        entrant2_id: ent2,
         winner_id: null,
         is_bye: false,
         completed_at: null,
@@ -180,6 +189,8 @@ export async function advanceWinner(
   winnerId: string,
   killmailUrl?: string
 ): Promise<void> {
+  console.log('=== advanceWinner START ===', { bracketId, winnerId, killmailUrl })
+
   const supabase = createSupabaseServerClient()
 
   const { data: bracket, error: fetchError } = await supabase
@@ -188,7 +199,9 @@ export async function advanceWinner(
     .eq('id', bracketId)
     .single()
 
-  if (fetchError || !bracket) throw new Error('Bracket not found')
+  console.log('Current bracket:', JSON.stringify(bracket))
+
+  if (fetchError || !bracket) throw new Error('Bracket not found: ' + fetchError?.message)
 
   const isThirdPlace = (bracket.is_third_place as boolean) ?? false
 
@@ -204,13 +217,13 @@ export async function advanceWinner(
     }
   }
 
-  const { error: updateError } = await supabase
+  const { error: currentUpdateError } = await supabase
     .from('brackets')
     .update(updateData)
     .eq('id', bracketId)
-  if (updateError) throw new Error('Failed to update bracket: ' + updateError.message)
+  if (currentUpdateError) throw new Error('Failed to update bracket: ' + currentUpdateError.message)
 
-  // Find totalRounds for this tournament (excluding third-place match doesn't inflate max)
+  // Find totalRounds for this tournament
   const { data: maxRoundRow } = await supabase
     .from('brackets')
     .select('round')
@@ -225,27 +238,69 @@ export async function advanceWinner(
     const nextRound = (bracket.round as number) + 1
     const nextMatchNumber = Math.ceil((bracket.match_number as number) / 2)
     const isOdd = (bracket.match_number as number) % 2 !== 0
+    const slotUpdate = isOdd ? { entrant1_id: winnerId } : { entrant2_id: winnerId }
 
-    const { data: nextBracket } = await supabase
+    console.log('Next round calculation:', {
+      currentRound: bracket.round,
+      currentMatchNumber: bracket.match_number,
+      nextRound,
+      nextMatchNumber,
+      isOdd,
+      slotUpdate,
+      tournamentId: bracket.tournament_id,
+    })
+
+    // Diagnostic: log ALL brackets for this tournament
+    const { data: allBrackets } = await supabase
       .from('brackets')
-      .select('id')
-      .eq('tournament_id', bracket.tournament_id)
+      .select('id, round, match_number, entrant1_id, entrant2_id, winner_id, is_third_place, tournament_id')
+      .eq('tournament_id', bracket.tournament_id as string)
+      .order('round', { ascending: true })
+      .order('match_number', { ascending: true })
+    console.log('ALL brackets for this tournament:', JSON.stringify(allBrackets))
+
+    // NOTE: Do NOT filter by is_third_place — the column may be NULL for regular brackets.
+    // The third-place bracket has match_number=0, so nextMatchNumber (always ≥1) won't collide.
+    const { data: nextBracket, error: nextError } = await supabase
+      .from('brackets')
+      .select('id, round, match_number, entrant1_id, entrant2_id')
+      .eq('tournament_id', bracket.tournament_id as string)
       .eq('round', nextRound)
       .eq('match_number', nextMatchNumber)
-      .eq('is_third_place', false)
       .single()
 
+    console.log('Next round query result:', JSON.stringify(nextBracket))
+    console.log('Next round query error:', nextError)
+
     if (nextBracket) {
-      const slotUpdate = isOdd ? { entrant1_id: winnerId } : { entrant2_id: winnerId }
-      await supabase.from('brackets').update(slotUpdate).eq('id', nextBracket.id)
+      const { data: updateResult, error: updateError } = await supabase
+        .from('brackets')
+        .update(slotUpdate)
+        .eq('id', nextBracket.id as string)
+        .select()
+        .single()
+
+      console.log('Update result:', JSON.stringify(updateResult))
+      console.log('Update error:', updateError)
+
+      if (updateError) {
+        console.error('Failed to update next bracket slot:', updateError)
+        throw new Error('Bracket slot update failed: ' + updateError.message)
+      }
+      console.log('Successfully updated next bracket:', updateResult)
+    } else {
+      console.log('No next bracket found — this may be the final round or all rounds complete')
     }
 
     // If semifinal: advance LOSER to third place match
-    if ((bracket.round as number) === totalRounds - 1 && totalRounds >= 3) {
+    // totalRounds >= 2 covers 4-player brackets (totalRounds=2, semis=round 1)
+    if ((bracket.round as number) === totalRounds - 1 && totalRounds >= 2) {
       const loserId =
         (bracket.entrant1_id as string) === winnerId
           ? (bracket.entrant2_id as string)
           : (bracket.entrant1_id as string)
+
+      console.log('Semifinal complete — placing loser in third-place bracket:', { loserId, totalRounds })
 
       if (loserId) {
         const { data: thirdPlaceBracket } = await supabase
@@ -255,13 +310,25 @@ export async function advanceWinner(
           .eq('is_third_place', true)
           .single()
 
+        console.log('Third place bracket:', JSON.stringify(thirdPlaceBracket))
+
         if (thirdPlaceBracket) {
           const slot = thirdPlaceBracket.entrant1_id === null ? 'entrant1_id' : 'entrant2_id'
-          await supabase.from('brackets').update({ [slot]: loserId }).eq('id', thirdPlaceBracket.id as string)
+          const { error: thirdPlaceError } = await supabase
+            .from('brackets')
+            .update({ [slot]: loserId })
+            .eq('id', thirdPlaceBracket.id as string)
+          if (thirdPlaceError) {
+            console.error('Failed to update third place bracket:', thirdPlaceError)
+          } else {
+            console.log('Placed loser in third-place bracket slot:', slot)
+          }
         }
       }
     }
   }
+
+  console.log('=== advanceWinner END ===')
 
   await resolveMatchBets(bracketId, winnerId)
 

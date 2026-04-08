@@ -969,7 +969,16 @@ export default function CommandCenterClient({
     }
     // Refetch from server — round advancement happens server-side in advanceWinner
     await refetchBrackets()
-  }, [tournament.id, refetchBrackets])
+    // Auto-advance to next round tab if all matches in current round are now complete
+    setSelectedRound((prev) => {
+      const currentRoundMatches = brackets.filter(
+        (b) => b.round === prev && !b.is_third_place
+      )
+      const allComplete = currentRoundMatches.length > 0 &&
+        currentRoundMatches.every((b) => b.winner_id || b.is_bye || b.id === bracketId)
+      return allComplete && prev < totalRounds ? prev + 1 : prev
+    })
+  }, [tournament.id, refetchBrackets, brackets, totalRounds])
 
   const handleForfeit = useCallback(async (bracketId: string, loserId: string) => {
     const b = brackets.find((br) => br.id === bracketId)
@@ -2105,7 +2114,10 @@ export default function CommandCenterClient({
           currentRound={selectedRound}
           tournamentId={tournament.id}
           onClose={() => setForceAdvanceOpen(false)}
-          onComplete={refetchBrackets}
+          onComplete={async () => {
+            await refetchBrackets()
+            setSelectedRound((prev) => prev < totalRounds ? prev + 1 : prev)
+          }}
         />
       )}
 

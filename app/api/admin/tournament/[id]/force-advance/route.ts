@@ -27,18 +27,26 @@ export async function POST(
     return NextResponse.json({ error: "round and matchResolutions are required" }, { status: 400 })
   }
 
+  console.log('=== force-advance called ===', { tournamentId, round, matchResolutions })
+
   const supabase = createSupabaseServerClient()
 
   for (const resolution of matchResolutions) {
+    console.log('Processing resolution:', resolution)
     if (resolution.action === "void") {
       await supabase
         .from("brackets")
         .update({ completed_at: new Date().toISOString(), match_status: "void" })
         .eq("id", resolution.bracketId)
+      console.log('Voided bracket:', resolution.bracketId)
     } else if (resolution.action === "advance" && resolution.winnerId) {
       try {
         await advanceWinner(resolution.bracketId, resolution.winnerId)
-      } catch { /* continue with remaining matches */ }
+        console.log('advanceWinner completed for:', resolution.bracketId)
+      } catch (e) {
+        console.error('advanceWinner failed for:', resolution.bracketId, e)
+        /* continue with remaining matches */
+      }
     }
   }
 
