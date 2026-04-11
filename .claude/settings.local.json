@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(mkdir -p \"c:\\\\GitHub_Repos\\\\eve-tournament\\\\eve-tournament\\\\app\\\\api\\\\admin\\\\bracket\\\\[id]\\\\checkin\")",
+      "Bash(mkdir -p \"c:\\\\GitHub_Repos\\\\eve-tournament\\\\eve-tournament\\\\app\\\\api\\\\admin\\\\bracket\\\\[id]\\\\status\")",
+      "Bash(xargs sed:*)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(echo \"EXIT:$?\")"
+    ],
+    "additionalDirectories": [
+      "c:\\GitHub_Repos\\eve-tournament\\eve-tournament\\app\\admin\\tournament\\[id]",
+      "c:\\GitHub_Repos\\eve-tournament\\eve-tournament\\app\\api\\admin\\tournament\\[id]"
+    ]
+  }
+}

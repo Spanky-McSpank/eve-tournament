@@ -207,22 +207,38 @@ function getRoundLabel(round: number, totalRounds: number): string {
 function QueueMatchCard({
   bracket,
   matchStatus,
+  tournamentId,
   onStatusChange,
-  onResultEnter,
   onForfeit,
   onCheckin,
   onSchedule,
+  onResultEntered,
 }: {
   bracket: BracketFull
   matchStatus: MatchStatus
+  tournamentId: string
   onStatusChange: (id: string, status: MatchStatus) => void
-  onResultEnter: (bracketId: string) => void
   onForfeit: (bracketId: string, loserId: string, loserName: string) => void
   onCheckin: (bracketId: string, entrantId: string, checked: boolean) => void
   onSchedule: (bracketId: string) => void
+  onResultEntered?: () => Promise<void>
 }) {
   const [forfeitExpanded, setForfeitExpanded] = useState(false)
   const [forfeitConfirm, setForfeitConfirm] = useState<{ id: string; name: string } | null>(null)
+
+  // Inline result modal state
+  const [showResultModal, setShowResultModal] = useState(false)
+  const [selectedWinnerId, setSelectedWinnerId] = useState<string | null>(null)
+  const [killmailInput, setKillmailInput] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  function openResultModal() {
+    setSelectedWinnerId(null)
+    setKillmailInput("")
+    setSubmitError(null)
+    setShowResultModal(true)
+  }
 
   const e1 = bracket.entrant1
   const e2 = bracket.entrant2
@@ -370,13 +386,13 @@ function QueueMatchCard({
           )}
           {/* Always show Enter Result when both entrants are set */}
           {e1 && e2 && (
-            <SmBtn onClick={() => onResultEnter(bracket.id)} variant="gold">
+            <SmBtn onClick={openResultModal} variant="gold">
               🏆 {matchStatus === "live" ? "ENTER RESULT" : "Enter Result"}
             </SmBtn>
           )}
           {/* Single entrant — override button */}
           {e1 && !e2 && (
-            <SmBtn onClick={() => onResultEnter(bracket.id)} variant="amber">
+            <SmBtn onClick={openResultModal} variant="amber">
               🏆 Enter Result — Override
             </SmBtn>
           )}
@@ -421,9 +437,119 @@ function QueueMatchCard({
               ⚔ View Kill
             </a>
           ) : (
-            <SmBtn onClick={() => onResultEnter(bracket.id)} variant="ghost">🔗 Add Kill Link</SmBtn>
+            <SmBtn onClick={openResultModal} variant="ghost">🔗 Add Kill Link</SmBtn>
           )}
-          <SmBtn onClick={() => onResultEnter(bracket.id)} variant="ghost">✏️ Override</SmBtn>
+          <SmBtn onClick={openResultModal} variant="ghost">✏️ Override</SmBtn>
+        </div>
+      )}
+
+      {/* ── Inline Result Modal ─────────────────────────────────────────── */}
+      {showResultModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#0d0d0d", border: "1px solid rgba(240,192,64,0.4)", borderRadius: 8, padding: 28, width: 480, maxWidth: "90vw" }}>
+            <div style={{ fontSize: 14, fontFamily: "monospace", fontWeight: 700, color: GOLD, marginBottom: 20 }}>
+              Enter Match Result
+            </div>
+
+            <div style={{ fontSize: 10, color: "var(--ev-muted)", fontFamily: "monospace", letterSpacing: 1, marginBottom: 10 }}>WINNER</div>
+
+            {bracket.entrant1 && !bracket.entrant2 && (
+              <div style={{ marginBottom: 10, padding: "7px 10px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 6, fontSize: 11, color: AMBER, fontFamily: "monospace" }}>
+                ⚠ No opponent set — {bracket.entrant1.character_name} will advance by default
+              </div>
+            )}
+
+            {[bracket.entrant1, bracket.entrant2].map((e) => e && (
+              <div
+                key={e.id}
+                onClick={() => setSelectedWinnerId(e.id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 12, padding: "10px 12px",
+                  marginBottom: 8, borderRadius: 6, cursor: "pointer",
+                  background: selectedWinnerId === e.id ? "rgba(240,192,64,0.08)" : "transparent",
+                  border: `2px solid ${selectedWinnerId === e.id ? "rgba(240,192,64,0.5)" : "#333"}`,
+                  transition: "all 0.12s",
+                }}
+              >
+                <div style={{
+                  width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                  border: `2px solid ${GOLD}`,
+                  background: selectedWinnerId === e.id ? GOLD : "transparent",
+                }} />
+                {e.portrait_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={e.portrait_url} alt={e.character_name} style={{ width: 36, height: 36, borderRadius: "50%" }} />
+                )}
+                <span style={{ color: selectedWinnerId === e.id ? GOLD : "var(--ev-text)", fontWeight: selectedWinnerId === e.id ? 700 : 400, fontSize: 13 }}>
+                  {e.character_name}
+                </span>
+              </div>
+            ))}
+
+            <div style={{ fontSize: 10, color: "var(--ev-muted)", fontFamily: "monospace", letterSpacing: 1, marginBottom: 6, marginTop: 14 }}>KILLMAIL URL (OPTIONAL)</div>
+            <input
+              type="text"
+              value={killmailInput}
+              onChange={(ev) => setKillmailInput(ev.target.value)}
+              placeholder="https://zkillboard.com/kill/..."
+              style={{ width: "100%", padding: "8px 12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: 4, color: "#fff", marginBottom: 16, fontFamily: "monospace", fontSize: 12, boxSizing: "border-box" }}
+            />
+
+            {submitError && (
+              <div style={{ color: "#ff4444", fontSize: 13, marginBottom: 12, fontFamily: "monospace" }}>{submitError}</div>
+            )}
+
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                disabled={!selectedWinnerId || submitting}
+                onClick={async () => {
+                  if (!selectedWinnerId) { setSubmitError("Please select a winner"); return }
+                  setSubmitting(true)
+                  setSubmitError(null)
+                  console.log("Submitting result:", { url: `/api/tournament/${tournamentId}/advance`, bracketId: bracket.id, winnerId: selectedWinnerId })
+                  try {
+                    const response = await fetch(`/api/tournament/${tournamentId}/advance`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        bracketId: bracket.id,
+                        winnerId: selectedWinnerId,
+                        ...(killmailInput ? { killmailUrl: killmailInput } : {}),
+                      }),
+                    })
+                    console.log("Response status:", response.status)
+                    const data = await response.json() as { error?: string }
+                    console.log("Response data:", data)
+                    if (!response.ok) { setSubmitError(data.error ?? `Error: ${response.status}`); return }
+                    setShowResultModal(false)
+                    setSelectedWinnerId(null)
+                    setKillmailInput("")
+                    if (onResultEntered) await onResultEntered()
+                  } catch (err) {
+                    console.error("Fetch error:", err)
+                    setSubmitError("Network error — check console for details")
+                  } finally {
+                    setSubmitting(false)
+                  }
+                }}
+                style={{
+                  flex: 1, padding: "11px 0", fontFamily: "monospace", fontWeight: 700, fontSize: 13,
+                  background: selectedWinnerId && !submitting ? "var(--ev-gold)" : "#444",
+                  color: selectedWinnerId && !submitting ? "#080500" : "#888",
+                  border: "none", borderRadius: 6,
+                  cursor: selectedWinnerId && !submitting ? "pointer" : "not-allowed",
+                }}
+              >
+                {submitting ? "Submitting..." : "Confirm Result"}
+              </button>
+              <button
+                onClick={() => { setShowResultModal(false); setSelectedWinnerId(null); setSubmitError(null) }}
+                style={{ padding: "11px 20px", background: "transparent", color: "var(--ev-muted)", border: "1px solid #444", borderRadius: 6, cursor: "pointer", fontFamily: "monospace" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -823,7 +949,6 @@ export default function CommandCenterClient({
   const [selectedRound, setSelectedRound] = useState(tournament.current_round ?? 1)
   const [localStatuses, setLocalStatuses] = useState<Map<string, MatchStatus>>(new Map())
   const [selectedBracketId, setSelectedBracketId] = useState<string | null>(null)
-  const [resultModal, setResultModal] = useState<BracketFull | null>(null)
   const [scheduleModal, setScheduleModal] = useState<{ bracketId: string; current: string | null } | null>(null)
   const [forceAdvanceOpen, setForceAdvanceOpen] = useState(false)
 
@@ -947,46 +1072,28 @@ export default function CommandCenterClient({
     } catch { /* non-fatal, local state persists */ }
   }, [])
 
-  const handleResultEnter = useCallback((bracketId: string) => {
-    const b = brackets.find((br) => br.id === bracketId)
-    if (b) setResultModal(b)
-  }, [brackets])
-
-  const handleResultSubmit = useCallback(async (bracketId: string, winnerId: string, killmailUrl: string) => {
-    console.log('Submitting result to API:', {
-      url: `/api/tournament/${tournament.id}/advance`,
-      bracketId,
-      winnerId,
-    })
-    const res = await fetch(`/api/tournament/${tournament.id}/advance`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bracketId, winnerId, ...(killmailUrl ? { killmailUrl } : {}) }),
-    })
-    if (!res.ok) {
-      const d = await res.json() as { error?: string }
-      throw new Error(d.error ?? "Failed to set result")
-    }
-    // Refetch from server — round advancement happens server-side in advanceWinner
+  const handleResultEntered = useCallback(async () => {
     await refetchBrackets()
-    // Auto-advance to next round tab if all matches in current round are now complete
+    // After refetch, brackets state is stale here — use functional update to check round completion
     setSelectedRound((prev) => {
-      const currentRoundMatches = brackets.filter(
-        (b) => b.round === prev && !b.is_third_place
-      )
-      const allComplete = currentRoundMatches.length > 0 &&
-        currentRoundMatches.every((b) => b.winner_id || b.is_bye || b.id === bracketId)
-      return allComplete && prev < totalRounds ? prev + 1 : prev
+      // brackets hasn't updated yet in this closure; switch round optimistically only if we had ≤1 match left
+      const pending = brackets.filter((b) => b.round === prev && !b.is_third_place && !b.winner_id && !b.is_bye)
+      return pending.length <= 1 && prev < totalRounds ? prev + 1 : prev
     })
-  }, [tournament.id, refetchBrackets, brackets, totalRounds])
+  }, [refetchBrackets, brackets, totalRounds])
 
   const handleForfeit = useCallback(async (bracketId: string, loserId: string) => {
     const b = brackets.find((br) => br.id === bracketId)
     if (!b) return
     const winnerId = b.entrant1_id === loserId ? b.entrant2_id : b.entrant1_id
     if (!winnerId) return
-    await handleResultSubmit(bracketId, winnerId, "")
-  }, [brackets, handleResultSubmit])
+    const res = await fetch(`/api/tournament/${tournament.id}/advance`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bracketId, winnerId }),
+    })
+    if (res.ok) await handleResultEntered()
+  }, [brackets, tournament.id, handleResultEntered])
 
   const handleCheckin = useCallback(async (bracketId: string, entrantId: string, checked: boolean) => {
     // Optimistically update local entrant checked_in state
@@ -1395,11 +1502,12 @@ export default function CommandCenterClient({
                       key={b.id}
                       bracket={b}
                       matchStatus={derivedStatus(b, localStatuses.get(b.id))}
+                      tournamentId={tournament.id}
                       onStatusChange={handleStatusChange}
-                      onResultEnter={handleResultEnter}
                       onForfeit={handleForfeit}
                       onCheckin={handleCheckin}
                       onSchedule={(id) => setScheduleModal({ bracketId: id, current: brackets.find((br) => br.id === id)?.scheduled_time ?? null })}
+                      onResultEntered={handleResultEntered}
                     />
                   ))}
 
@@ -1416,11 +1524,12 @@ export default function CommandCenterClient({
                         <QueueMatchCard
                           bracket={thirdPlaceMatch}
                           matchStatus={derivedStatus(thirdPlaceMatch, localStatuses.get(thirdPlaceMatch.id))}
+                          tournamentId={tournament.id}
                           onStatusChange={handleStatusChange}
-                          onResultEnter={handleResultEnter}
                           onForfeit={handleForfeit}
                           onCheckin={handleCheckin}
                           onSchedule={(id) => setScheduleModal({ bracketId: id, current: brackets.find((br) => br.id === id)?.scheduled_time ?? null })}
+                          onResultEntered={handleResultEntered}
                         />
                       </div>
                     )
@@ -2093,13 +2202,6 @@ export default function CommandCenterClient({
       </div>
 
       {/* Modals */}
-      {resultModal && (
-        <ResultModal
-          bracket={resultModal}
-          onClose={() => setResultModal(null)}
-          onSubmit={(winnerId, killmailUrl) => handleResultSubmit(resultModal.id, winnerId, killmailUrl)}
-        />
-      )}
       {scheduleModal && (
         <ScheduleModal
           bracketId={scheduleModal.bracketId}

@@ -348,6 +348,12 @@ export async function advanceWinner(
   const allComplete = roundBrackets?.every((b) => b.winner_id !== null) ?? false
 
   if (allComplete) {
+    // Reset check-in status for next round
+    await supabase
+      .from('entrants')
+      .update({ checked_in: false })
+      .eq('tournament_id', bracket.tournament_id as string)
+
     await generateRoundSettlement(
       bracket.tournament_id as string,
       bracket.round as number
