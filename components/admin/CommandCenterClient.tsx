@@ -506,15 +506,19 @@ function QueueMatchCard({
                   if (!selectedWinnerId) { setSubmitError("Please select a winner"); return }
                   setSubmitting(true)
                   setSubmitError(null)
-                  console.log("Submitting result:", { url: `/api/tournament/${tournamentId}/advance`, bracketId: bracket.id, winnerId: selectedWinnerId })
+                  console.log("Submitting result via force-advance:", { tournamentId, bracketId: bracket.id, winnerId: selectedWinnerId })
                   try {
-                    const response = await fetch(`/api/tournament/${tournamentId}/advance`, {
+                    const response = await fetch(`/api/admin/tournament/${tournamentId}/force-advance`, {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
-                        bracketId: bracket.id,
-                        winnerId: selectedWinnerId,
-                        ...(killmailInput ? { killmailUrl: killmailInput } : {}),
+                        round: bracket.round,
+                        matchResolutions: [{
+                          bracketId: bracket.id,
+                          action: "advance",
+                          winnerId: selectedWinnerId,
+                          ...(killmailInput ? { killmailUrl: killmailInput } : {}),
+                        }],
                       }),
                     })
                     console.log("Response status:", response.status)
@@ -1073,24 +1077,35 @@ export default function CommandCenterClient({
   }, [])
 
   const handleResultEntered = useCallback(async () => {
-    await refetchBrackets()
-    // After refetch, brackets state is stale here — use functional update to check round completion
-    setSelectedRound((prev) => {
-      // brackets hasn't updated yet in this closure; switch round optimistically only if we had ≤1 match left
-      const pending = brackets.filter((b) => b.round === prev && !b.is_third_place && !b.winner_id && !b.is_bye)
-      return pending.length <= 1 && prev < totalRounds ? prev + 1 : prev
-    })
-  }, [refetchBrackets, brackets, totalRounds])
+    // Fetch fresh bracket data then decide whether to advance the round tab
+    try {
+      const res = await fetch(`/api/tournament/${tournament.id}/bracket`)
+      if (res.ok) {
+        const data = await res.json() as { brackets: BracketFull[] }
+        const fresh = data.brackets
+        setBrackets(fresh)
+        setLocalStatuses(new Map())
+        setSelectedRound((prev) => {
+          const currentRoundMatches = fresh.filter((b) => b.round === prev && !b.is_third_place && !b.is_bye)
+          const allComplete = currentRoundMatches.length > 0 && currentRoundMatches.every((b) => b.winner_id)
+          return allComplete && prev < totalRounds ? prev + 1 : prev
+        })
+      }
+    } catch { /* non-critical */ }
+  }, [tournament.id, totalRounds])
 
   const handleForfeit = useCallback(async (bracketId: string, loserId: string) => {
     const b = brackets.find((br) => br.id === bracketId)
     if (!b) return
     const winnerId = b.entrant1_id === loserId ? b.entrant2_id : b.entrant1_id
     if (!winnerId) return
-    const res = await fetch(`/api/tournament/${tournament.id}/advance`, {
+    const res = await fetch(`/api/admin/tournament/${tournament.id}/force-advance`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bracketId, winnerId }),
+      body: JSON.stringify({
+        round: b.round,
+        matchResolutions: [{ bracketId, action: "advance", winnerId }],
+      }),
     })
     if (res.ok) await handleResultEntered()
   }, [brackets, tournament.id, handleResultEntered])
@@ -1587,6 +1602,29 @@ export default function CommandCenterClient({
                   <div style={{ marginTop: 10, padding: "8px 14px", background: "rgba(255,255,255,0.02)", borderRadius: 6, fontSize: 11, fontFamily: "monospace", color: "var(--ev-muted)" }}>
                     Tournament: {completedMatches}/{totalMatches} matches complete
                   </div>
+
+                  {/* Complete Tournament button */}
+                  {(() => {
+                    const finalMatch = brackets.find((b) => b.round === totalRounds && !b.is_third_place)
+                    const thirdPlaceMatch = brackets.find((b) => b.is_third_place)
+                    const canComplete = finalMatch?.winner_id && (!thirdPlaceMatch || thirdPlaceMatch.winner_id)
+                    if (!canComplete) return null
+                    return (
+                      <button
+                        onClick={async () => {
+                          const res = await fetch(`/api/admin/tournament/${tournament.id}/update`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ status: "complete" }),
+                          })
+                          if (res.ok) window.location.href = `/tournament/${tournament.id}`
+                        }}
+                        style={{ marginTop: 12, width: "100%", padding: "12px 0", background: "var(--ev-gold)", border: "none", borderRadius: 6, fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer", color: "#080500" }}
+                      >
+                        🏆 COMPLETE TOURNAMENT
+                      </button>
+                    )
+                  })()}
                 </div>
               </div>
             )}

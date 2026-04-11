@@ -7,6 +7,7 @@ interface MatchResolution {
   bracketId: string
   action: "advance" | "void"
   winnerId?: string
+  killmailUrl?: string
 }
 
 export async function POST(
@@ -41,20 +42,32 @@ export async function POST(
       console.log('Voided bracket:', resolution.bracketId)
     } else if (resolution.action === "advance" && resolution.winnerId) {
       try {
-        await advanceWinner(resolution.bracketId, resolution.winnerId)
+        await advanceWinner(resolution.bracketId, resolution.winnerId, resolution.killmailUrl)
         console.log('advanceWinner completed for:', resolution.bracketId)
       } catch (e) {
         console.error('advanceWinner failed for:', resolution.bracketId, e)
-        /* continue with remaining matches */
+        return NextResponse.json({ error: e instanceof Error ? e.message : "advanceWinner failed" }, { status: 500 })
       }
     }
   }
 
-  // Advance tournament's current_round counter
-  await supabase
-    .from("tournaments")
-    .update({ current_round: round + 1, updated_at: new Date().toISOString() })
-    .eq("id", tournamentId)
+  // Only increment current_round if the entire round is now complete
+  const { data: roundBrackets } = await supabase
+    .from("brackets")
+    .select("winner_id, is_bye, is_third_place")
+    .eq("tournament_id", tournamentId)
+    .eq("round", round)
 
-  return NextResponse.json({ success: true, nextRound: round + 1 })
+  const roundComplete = (roundBrackets ?? [])
+    .filter((b) => !b.is_third_place)
+    .every((b) => b.winner_id !== null || b.is_bye)
+
+  if (roundComplete) {
+    await supabase
+      .from("tournaments")
+      .update({ current_round: round + 1, updated_at: new Date().toISOString() })
+      .eq("id", tournamentId)
+  }
+
+  return NextResponse.json({ success: true, roundComplete, nextRound: round + 1 })
 }
