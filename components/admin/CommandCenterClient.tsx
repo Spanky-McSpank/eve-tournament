@@ -233,7 +233,14 @@ function QueueMatchCard({
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  function openResultModal() {
+  async function openResultModal() {
+    const sessionCheck = await fetch('/api/auth/me')
+    const session = await sessionCheck.json() as { isAuthenticated?: boolean; isAdmin?: boolean }
+    if (!session.isAuthenticated || !session.isAdmin) {
+      alert('Your session has expired. Please log back in.')
+      window.location.href = '/api/auth/eve'
+      return
+    }
     setSelectedWinnerId(null)
     setKillmailInput("")
     setSubmitError(null)
@@ -522,6 +529,11 @@ function QueueMatchCard({
                       }),
                     })
                     console.log("Response status:", response.status)
+                    if (response.status === 403) {
+                      setSubmitError('Your session has expired. Please log out and log back in, then try again.')
+                      setSubmitting(false)
+                      return
+                    }
                     const data = await response.json() as { error?: string }
                     console.log("Response data:", data)
                     if (!response.ok) { setSubmitError(data.error ?? `Error: ${response.status}`); return }
