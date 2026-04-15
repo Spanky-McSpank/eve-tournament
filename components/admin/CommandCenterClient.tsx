@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
 import { formatISK } from "@/lib/utils"
+import { createSupabaseClient } from "@/lib/supabase"
 import AdminBackButton from "@/components/admin/AdminBackButton"
 import BetManagementClient from "@/components/admin/BetManagementClient"
 import PropManagementSection from "@/components/admin/PropManagementSection"
@@ -232,6 +233,12 @@ function QueueMatchCard({
   const [killmailInput, setKillmailInput] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [locallyComplete, setLocallyComplete] = useState(false)
+
+  // Reset local completion flag when the parent refreshes this bracket
+  useEffect(() => {
+    setLocallyComplete(false)
+  }, [bracket.id, bracket.winner_id])
 
   async function openResultModal() {
     const checkSession = async () => {
@@ -398,13 +405,13 @@ function QueueMatchCard({
           )}
           {/* Always show Enter Result when both entrants are set */}
           {e1 && e2 && (
-            <SmBtn onClick={openResultModal} variant="gold">
+            <SmBtn onClick={openResultModal} variant="gold" disabled={!!bracket.winner_id || locallyComplete}>
               🏆 {matchStatus === "live" ? "ENTER RESULT" : "Enter Result"}
             </SmBtn>
           )}
           {/* Single entrant — override button */}
           {e1 && !e2 && (
-            <SmBtn onClick={openResultModal} variant="amber">
+            <SmBtn onClick={openResultModal} variant="amber" disabled={!!bracket.winner_id || locallyComplete}>
               🏆 Enter Result — Override
             </SmBtn>
           )}
@@ -544,6 +551,7 @@ function QueueMatchCard({
                     const data = await response.json() as { error?: string }
                     console.log("Response data:", data)
                     if (!response.ok) { setSubmitError(data.error ?? `Error: ${response.status}`); return }
+                    setLocallyComplete(true)
                     setShowResultModal(false)
                     setSelectedWinnerId(null)
                     setKillmailInput("")
@@ -950,7 +958,7 @@ export default function CommandCenterClient({
   totalIskInPlay,
   openPropCount,
 }: CommandCenterProps) {
-  const tournament = initialTournament as unknown as TFull
+  const [tournament, setTournament] = useState<TFull>(initialTournament as unknown as TFull)
   const [entrants, setEntrants] = useState<EntrantFull[]>(initialEntrants as unknown as EntrantFull[])
   const [brackets, setBrackets] = useState<BracketFull[]>(initialBrackets as unknown as BracketFull[])
 
@@ -1097,28 +1105,44 @@ export default function CommandCenterClient({
 
   const handleResultEntered = useCallback(async () => {
     try {
-      const res = await fetch(`/api/tournament/${tournament.id}/bracket`)
+      // Force fresh fetch from server — no cache
+      const res = await fetch(
+        `/api/tournament/${tournament.id}/bracket`,
+        { cache: 'no-store' }
+      )
+      if (!res.ok) return
+
       const data = await res.json() as { brackets: BracketFull[] }
       const freshBrackets = data.brackets
       setBrackets(freshBrackets)
       setLocalStatuses(new Map())
 
-      const currentRoundRealMatches = freshBrackets.filter(
+      // Also refresh tournament data to get updated current_round
+      const tourneyRes = await fetch(
+        `/api/tournament/${tournament.id}/info`,
+        { cache: 'no-store' }
+      )
+      if (tourneyRes.ok) {
+        const freshData = await tourneyRes.json() as { tournament: TFull }
+        setTournament((prev) => ({ ...prev, ...freshData.tournament }))
+      }
+
+      // Auto-advance round tab if current round complete
+      const nonByeNonThirdPlace = freshBrackets.filter(
         (b) => b.round === selectedRound && !b.is_third_place && !b.is_bye
       )
-      const allComplete = currentRoundRealMatches.every((b) => b.winner_id !== null)
-
-      if (allComplete && currentRoundRealMatches.length > 0) {
-        const nextRound = selectedRound + 1
+      const allComplete = nonByeNonThirdPlace.length > 0 &&
+        nonByeNonThirdPlace.every((b) => b.winner_id !== null)
+      if (allComplete) {
         const maxRound = Math.max(
-          ...freshBrackets.filter((b) => !b.is_third_place).map((b) => b.round)
+          ...freshBrackets.filter((b) => !b.is_third_place).map((b) => b.round as number)
         )
-        if (nextRound <= maxRound) {
-          setSelectedRound(nextRound)
+        if (selectedRound < maxRound) {
+          setSelectedRound(selectedRound + 1)
         }
       }
     } catch (err) {
-      console.error('Failed to refresh brackets:', err)
+      console.error('Refresh failed:', err)
     }
   }, [tournament.id, selectedRound])
 
@@ -1172,6 +1196,30 @@ export default function CommandCenterClient({
       prev.map((b) => b.id === bracketId ? { ...b, scheduled_time: time } : b)
     )
   }, [])
+
+  // Supabase realtime — auto-refresh bracket data on any DB change
+  useEffect(() => {
+    const supabase = createSupabaseClient()
+    const channel = supabase
+      .channel(`brackets:${tournament.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'brackets',
+          filter: `tournament_id=eq.${tournament.id}`,
+        },
+        async () => {
+          await handleResultEntered()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [tournament.id, handleResultEntered])
 
   const handleAddEntrant = useCallback(async () => {
     setAddLoading(true)
