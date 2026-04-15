@@ -4,7 +4,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { useCallback, useEffect, useState } from "react"
 import { formatISK } from "@/lib/utils"
-import { createSupabaseClient } from "@/lib/supabase"
 import AdminBackButton from "@/components/admin/AdminBackButton"
 import BetManagementClient from "@/components/admin/BetManagementClient"
 import PropManagementSection from "@/components/admin/PropManagementSection"
@@ -1196,30 +1195,6 @@ export default function CommandCenterClient({
       prev.map((b) => b.id === bracketId ? { ...b, scheduled_time: time } : b)
     )
   }, [])
-
-  // Supabase realtime — auto-refresh bracket data on any DB change
-  useEffect(() => {
-    const supabase = createSupabaseClient()
-    const channel = supabase
-      .channel(`brackets:${tournament.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'brackets',
-          filter: `tournament_id=eq.${tournament.id}`,
-        },
-        async () => {
-          await handleResultEntered()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      void supabase.removeChannel(channel)
-    }
-  }, [tournament.id, handleResultEntered])
 
   const handleAddEntrant = useCallback(async () => {
     setAddLoading(true)
