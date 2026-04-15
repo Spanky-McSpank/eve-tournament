@@ -232,13 +232,6 @@ function QueueMatchCard({
   const [killmailInput, setKillmailInput] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [locallyComplete, setLocallyComplete] = useState(false)
-
-  // Reset local completion flag when the parent refreshes this bracket
-  useEffect(() => {
-    setLocallyComplete(false)
-  }, [bracket.id, bracket.winner_id])
-
   async function openResultModal() {
     const checkSession = async () => {
       const res = await fetch('/api/auth/me')
@@ -404,13 +397,13 @@ function QueueMatchCard({
           )}
           {/* Always show Enter Result when both entrants are set */}
           {e1 && e2 && (
-            <SmBtn onClick={openResultModal} variant="gold" disabled={!!bracket.winner_id || locallyComplete}>
+            <SmBtn onClick={openResultModal} variant="gold" disabled={!!bracket.winner_id}>
               🏆 {matchStatus === "live" ? "ENTER RESULT" : "Enter Result"}
             </SmBtn>
           )}
           {/* Single entrant — override button */}
           {e1 && !e2 && (
-            <SmBtn onClick={openResultModal} variant="amber" disabled={!!bracket.winner_id || locallyComplete}>
+            <SmBtn onClick={openResultModal} variant="amber" disabled={!!bracket.winner_id}>
               🏆 Enter Result — Override
             </SmBtn>
           )}
@@ -550,7 +543,6 @@ function QueueMatchCard({
                     const data = await response.json() as { error?: string }
                     console.log("Response data:", data)
                     if (!response.ok) { setSubmitError(data.error ?? `Error: ${response.status}`); return }
-                    setLocallyComplete(true)
                     setShowResultModal(false)
                     setSelectedWinnerId(null)
                     setKillmailInput("")
@@ -1104,19 +1096,15 @@ export default function CommandCenterClient({
 
   const handleResultEntered = useCallback(async () => {
     try {
-      // Force fresh fetch from server — no cache
       const res = await fetch(
         `/api/tournament/${tournament.id}/bracket`,
         { cache: 'no-store' }
       )
       if (!res.ok) return
-
       const data = await res.json() as { brackets: BracketFull[] }
-      const freshBrackets = data.brackets
-      setBrackets(freshBrackets)
+      setBrackets(data.brackets)
       setLocalStatuses(new Map())
 
-      // Also refresh tournament data to get updated current_round
       const tourneyRes = await fetch(
         `/api/tournament/${tournament.id}/info`,
         { cache: 'no-store' }
@@ -1125,25 +1113,10 @@ export default function CommandCenterClient({
         const freshData = await tourneyRes.json() as { tournament: TFull }
         setTournament((prev) => ({ ...prev, ...freshData.tournament }))
       }
-
-      // Auto-advance round tab if current round complete
-      const nonByeNonThirdPlace = freshBrackets.filter(
-        (b) => b.round === selectedRound && !b.is_third_place && !b.is_bye
-      )
-      const allComplete = nonByeNonThirdPlace.length > 0 &&
-        nonByeNonThirdPlace.every((b) => b.winner_id !== null)
-      if (allComplete) {
-        const maxRound = Math.max(
-          ...freshBrackets.filter((b) => !b.is_third_place).map((b) => b.round as number)
-        )
-        if (selectedRound < maxRound) {
-          setSelectedRound(selectedRound + 1)
-        }
-      }
     } catch (err) {
       console.error('Refresh failed:', err)
     }
-  }, [tournament.id, selectedRound])
+  }, [tournament.id])
 
   const handleForfeit = useCallback(async (bracketId: string, loserId: string) => {
     const b = brackets.find((br) => br.id === bracketId)
