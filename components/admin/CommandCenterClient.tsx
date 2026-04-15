@@ -1612,12 +1612,33 @@ export default function CommandCenterClient({
                         <span>{roundTotal - roundCompleted}</span>
                       </div>
                     </div>
-                    {/* Force advance — always available when round has incomplete matches */}
+                    {/* Force advance — available when round has incomplete matches and not the final round */}
                     {!roundComplete && selectedRound < totalRounds && (
                       <div style={{ marginTop: 12, paddingTop: 10, borderTop: "0.5px solid rgba(255,255,255,0.06)" }}>
                         <SmBtn onClick={() => setForceAdvanceOpen(true)} variant="amber">
                           ⚡ Force Advance Round
                         </SmBtn>
+                      </div>
+                    )}
+                    {/* Force Complete Final — final round only, when final match has no winner */}
+                    {selectedRound === totalRounds && !brackets.find((b) => !b.is_third_place && b.match_number === 1 && b.round === totalRounds)?.winner_id && (
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "0.5px solid rgba(255,255,255,0.06)" }}>
+                        <button
+                          onClick={() => setForceAdvanceOpen(true)}
+                          style={{
+                            width: '100%',
+                            padding: '10px',
+                            background: 'transparent',
+                            color: '#f0c040',
+                            border: '1px solid #f0c040',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontFamily: 'monospace',
+                          }}
+                        >
+                          ⚡ Force Complete Final
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1629,23 +1650,29 @@ export default function CommandCenterClient({
 
                   {/* Complete Tournament button */}
                   {(() => {
+                    const maxRound = Math.max(...brackets.filter((x) => !x.is_third_place).map((x) => x.round))
                     const finalMatch = brackets.find(
-                      (b) => !b.is_third_place &&
-                        b.round === Math.max(...brackets.filter((x) => !x.is_third_place).map((x) => x.round))
+                      (b) => !b.is_third_place && b.match_number === 1 && b.round === maxRound
                     )
                     const thirdPlaceMatch = brackets.find((b) => b.is_third_place)
-                    const canComplete = finalMatch?.winner_id != null && (thirdPlaceMatch == null || thirdPlaceMatch.winner_id != null)
+                    const canComplete =
+                      finalMatch?.winner_id != null &&
+                      (thirdPlaceMatch == null || thirdPlaceMatch.winner_id != null)
                     if (!canComplete) return null
                     return (
                       <button
                         onClick={async () => {
-                          if (!confirm('Mark this tournament as complete?')) return
+                          if (!confirm('Mark this tournament as complete? This will crown the champion.')) return
                           const res = await fetch(`/api/admin/tournament/${tournament.id}/update`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ status: 'complete' }),
                           })
-                          if (res.ok) window.location.href = `/tournament/${tournament.id}`
+                          if (res.ok) {
+                            window.location.href = `/tournament/${tournament.id}`
+                          } else {
+                            alert('Failed to complete tournament')
+                          }
                         }}
                         style={{
                           width: '100%',
@@ -1659,6 +1686,7 @@ export default function CommandCenterClient({
                           cursor: 'pointer',
                           fontSize: '16px',
                           letterSpacing: '0.05em',
+                          textTransform: 'uppercase',
                         }}
                       >
                         🏆 COMPLETE TOURNAMENT
