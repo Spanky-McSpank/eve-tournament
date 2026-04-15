@@ -234,13 +234,18 @@ function QueueMatchCard({
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   async function openResultModal() {
-    const sessionCheck = await fetch('/api/auth/me')
-    const session = await sessionCheck.json() as { isAuthenticated?: boolean; isAdmin?: boolean }
-    if (!session.isAuthenticated || !session.isAdmin) {
-      alert('Your session has expired. Please log back in.')
-      window.location.href = '/api/auth/eve'
-      return
+    const checkSession = async () => {
+      const res = await fetch('/api/auth/me')
+      const data = await res.json() as { isAuthenticated?: boolean; isAdmin?: boolean }
+      if (!data.isAuthenticated || !data.isAdmin) {
+        alert('Your session has expired. You will be redirected to log in again.')
+        window.location.href = `/api/auth/eve?returnTo=${window.location.pathname}`
+        return false
+      }
+      return true
     }
+    const sessionValid = await checkSession()
+    if (!sessionValid) return
     setSelectedWinnerId(null)
     setKillmailInput("")
     setSubmitError(null)
@@ -530,8 +535,10 @@ function QueueMatchCard({
                     })
                     console.log("Response status:", response.status)
                     if (response.status === 403) {
-                      setSubmitError('Your session has expired. Please log out and log back in, then try again.')
-                      setSubmitting(false)
+                      setSubmitError('Session expired — redirecting to login...')
+                      setTimeout(() => {
+                        window.location.href = `/api/auth/eve?returnTo=${window.location.pathname}`
+                      }, 1500)
                       return
                     }
                     const data = await response.json() as { error?: string }
@@ -1089,22 +1096,31 @@ export default function CommandCenterClient({
   }, [])
 
   const handleResultEntered = useCallback(async () => {
-    // Fetch fresh bracket data then decide whether to advance the round tab
     try {
       const res = await fetch(`/api/tournament/${tournament.id}/bracket`)
-      if (res.ok) {
-        const data = await res.json() as { brackets: BracketFull[] }
-        const fresh = data.brackets
-        setBrackets(fresh)
-        setLocalStatuses(new Map())
-        setSelectedRound((prev) => {
-          const currentRoundMatches = fresh.filter((b) => b.round === prev && !b.is_third_place && !b.is_bye)
-          const allComplete = currentRoundMatches.length > 0 && currentRoundMatches.every((b) => b.winner_id)
-          return allComplete && prev < totalRounds ? prev + 1 : prev
-        })
+      const data = await res.json() as { brackets: BracketFull[] }
+      const freshBrackets = data.brackets
+      setBrackets(freshBrackets)
+      setLocalStatuses(new Map())
+
+      const currentRoundRealMatches = freshBrackets.filter(
+        (b) => b.round === selectedRound && !b.is_third_place && !b.is_bye
+      )
+      const allComplete = currentRoundRealMatches.every((b) => b.winner_id !== null)
+
+      if (allComplete && currentRoundRealMatches.length > 0) {
+        const nextRound = selectedRound + 1
+        const maxRound = Math.max(
+          ...freshBrackets.filter((b) => !b.is_third_place).map((b) => b.round)
+        )
+        if (nextRound <= maxRound) {
+          setSelectedRound(nextRound)
+        }
       }
-    } catch { /* non-critical */ }
-  }, [tournament.id, totalRounds])
+    } catch (err) {
+      console.error('Failed to refresh brackets:', err)
+    }
+  }, [tournament.id, selectedRound])
 
   const handleForfeit = useCallback(async (bracketId: string, loserId: string) => {
     const b = brackets.find((br) => br.id === bracketId)
@@ -1617,21 +1633,37 @@ export default function CommandCenterClient({
 
                   {/* Complete Tournament button */}
                   {(() => {
-                    const finalMatch = brackets.find((b) => b.round === totalRounds && !b.is_third_place)
+                    const finalMatch = brackets.find(
+                      (b) => !b.is_third_place &&
+                        b.round === Math.max(...brackets.filter((x) => !x.is_third_place).map((x) => x.round))
+                    )
                     const thirdPlaceMatch = brackets.find((b) => b.is_third_place)
-                    const canComplete = finalMatch?.winner_id && (!thirdPlaceMatch || thirdPlaceMatch.winner_id)
+                    const canComplete = finalMatch?.winner_id != null && (thirdPlaceMatch == null || thirdPlaceMatch.winner_id != null)
                     if (!canComplete) return null
                     return (
                       <button
                         onClick={async () => {
+                          if (!confirm('Mark this tournament as complete?')) return
                           const res = await fetch(`/api/admin/tournament/${tournament.id}/update`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ status: "complete" }),
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: 'complete' }),
                           })
                           if (res.ok) window.location.href = `/tournament/${tournament.id}`
                         }}
-                        style={{ marginTop: 12, width: "100%", padding: "12px 0", background: "var(--ev-gold)", border: "none", borderRadius: 6, fontFamily: "monospace", fontWeight: 700, fontSize: 13, cursor: "pointer", color: "#080500" }}
+                        style={{
+                          width: '100%',
+                          marginTop: '12px',
+                          padding: '14px',
+                          background: 'linear-gradient(135deg, #F0C040, #C89020)',
+                          color: '#000',
+                          fontWeight: 'bold',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontSize: '16px',
+                          letterSpacing: '0.05em',
+                        }}
                       >
                         🏆 COMPLETE TOURNAMENT
                       </button>
